@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      width: 320px;
+      padding: 15px;
+      font-family: Arial, sans-serif;
+    }
+    h1 {
+      font-size: 18px;
+      margin: 0 0 15px 0;
+      color: #333;
+    }
+    .status {
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 5px;
+      margin-bottom: 15px;
+    }
+    .status.recording {
+      background: #ffebee;
+      color: #c62828;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #1976D2;
+    }
+    button.stop {
+      background: #f44336;
+    }
+    button.stop:hover {
+      background: #d32f2f;
+    }
+  </style>
+</head>
+<body>
+  <h1>VaultScribe Legal</h1>
+  <div id="status" class="status">Ready to record</div>
+  <input type="text" id="matterCode" placeholder="Matter Code (e.g., MATTER-001)">
+  <input type="text" id="clientCode" placeholder="Client Code (optional)">
+  <button id="recordBtn">Start Recording</button>
+  <script src="popup.js"></script>
+</body>
+</html>

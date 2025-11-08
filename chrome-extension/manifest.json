@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "VaultScribe Legal",
+  "version": "0.1.0",
+  "description": "Secure meeting recorder for law firms",
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://localhost:8000/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["recording.html", "recording.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

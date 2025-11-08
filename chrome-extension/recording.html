@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>VaultScribe Recording</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    h1 { color: #333; }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 10px;
+      cursor: pointer;
+    }
+    .recording { 
+      background: #f44336; 
+      color: white;
+    }
+    .ready {
+      background: #4CAF50;
+      color: white;
+    }
+    #status {
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 5px;
+      margin: 20px 0;
+    }
+    #error {
+      color: red;
+      padding: 10px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>VaultScribe Recording Page</h1>
+  <div id="status">Ready to record</div>
+  <div id="error"></div>
+  <div class="controls">
+    <button id="recordBtn" class="ready">Start Recording</button>
+  </div>
+  <div id="recordings"></div>
+  
+  <script src="recording.js"></script>
+</body>
+</html>
