@@ -1,28 +1,26 @@
-# VaultScribe Daily Tasks
+# VaultScribe Current Sprint
 
-## Friday, Nov 8, 2024
+## Active Development: Desktop App
+- [x] Electron app scaffolded
+- [x] Professional UI created
+- [ ] System audio capture
+- [ ] Integration with API
+- [ ] S3/Azure upload
 
-### Morning
-- [x] Python setup
-- [x] FastAPI structure
-- [x] GitHub repository
+## API Endpoints Needed
+- [x] POST /api/session - Create recording session
+- [x] GET /api/session/{id} - Get session details
+- [ ] POST /api/session/{id}/upload-url - Get presigned URL
+- [ ] POST /api/session/{id}/complete - Mark as complete
+- [ ] POST /api/session/{id}/transcription - Store transcript
 
-### Afternoon  
-- [x] Chrome extension created
-- [x] Session API working
-- [ ] Audio recording setup
+## Decisions Made
+1. Desktop app over Chrome extension (better audio access)
+2. Electron for cross-platform support
+3. Customer-controlled storage (not our S3)
+4. Zero-knowledge architecture
 
-### Evening
-- [ ] Test with real meeting
-- [ ] Plan tomorrow's tasks
-
-## Next Session TODOs
-1. Add MediaRecorder API to extension
-2. Test audio capture on Google Meet
-3. Create S3 bucket for storage
-4. Add upload functionality
-
-## Questions to Research
-- Best way to capture tab audio?
-- How to handle long recordings (>1hr)?
-- Compression before upload?
+## Parking Lot (Don't Distract!)
+- Mobile app
+- Slack integration  
+- Calendar integration
