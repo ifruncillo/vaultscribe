@@ -9,6 +9,12 @@ import hashlib
 import secrets
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+from api.storage import get_storage_service
 
 app = FastAPI(title="VaultScribe API", version="0.1.0")
 
@@ -54,7 +60,30 @@ def root():
 
 @app.get("/health")
 def health():
-    return {"status": "healthy"}
+    try:
+        storage = get_storage_service()
+        storage_info = storage.get_storage_info()
+        return {
+            "status": "healthy",
+            "storage": storage_info
+        }
+    except Exception as e:
+        return {
+            "status": "healthy",
+            "storage": {
+                "backend": "unknown",
+                "error": str(e)
+            }
+        }
+
+@app.get("/api/storage/info")
+def storage_info():
+    """Get information about the configured storage backend"""
+    try:
+        storage = get_storage_service()
+        return storage.get_storage_info()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Storage service error: {str(e)}")
 
 @app.post("/api/session", response_model=SessionResponse)
 def create_session(request: SessionRequest):
@@ -62,7 +91,7 @@ def create_session(request: SessionRequest):
     session_id = hashlib.sha256(
         f"{datetime.now().isoformat()}-{secrets.token_hex(8)}".encode()
     ).hexdigest()[:16]
-    
+
     # Create session record
     session = {
         "session_id": session_id,
@@ -72,13 +101,19 @@ def create_session(request: SessionRequest):
         "description": request.description,
         "status": "ready"
     }
-    
+
     # Store in memory (temporary)
     sessions[session_id] = session
-    
-    # TODO: Generate real presigned URL from S3/Azure
-    upload_url = f"https://storage.vaultscribe.com/upload/{session_id}"
-    
+
+    # Generate presigned upload URL using configured storage backend
+    try:
+        storage = get_storage_service()
+        upload_url = storage.generate_upload_url(session_id, "recording.webm")
+    except Exception as e:
+        # Fallback to local upload if storage service fails
+        upload_url = f"/api/session/{session_id}/upload"
+        print(f"Warning: Failed to generate cloud storage URL: {e}")
+
     return SessionResponse(
         session_id=session_id,
         created_at=session["created_at"],

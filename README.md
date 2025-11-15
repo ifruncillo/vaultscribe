@@ -41,12 +41,25 @@ Zero-knowledge meeting intelligence for regulated industries.
 - ✅ `POST /api/session` - Create new recording session
 - ✅ `GET /api/session/{id}` - Get session details
 - ✅ `POST /api/session/{id}/upload` - Upload audio file
-- ✅ `GET /health` - Health check
+- ✅ `GET /api/storage/info` - Get storage backend info
+- ✅ `GET /health` - Health check with storage status
 - ✅ `GET /app` - Serve web application
+
+## Storage Configuration
+
+VaultScribe supports multiple storage backends for customer-controlled, zero-knowledge architecture:
+
+- **Local** - Files stored on server (default, good for development)
+- **AWS S3** - Customer-controlled S3 bucket with presigned URLs
+- **Azure Blob Storage** - Customer-controlled Azure storage with SAS tokens
+
+**📖 See [STORAGE_SETUP.md](STORAGE_SETUP.md) for detailed configuration instructions.**
 
 ## Current Status
 - ✅ API: Fully functional with session management
 - ✅ Web App: Complete with audio recording
 - ✅ Audio Capture: Working via browser MediaRecorder API
-- 📝 Next: S3/Azure integration for customer-controlled storage
+- ✅ Cloud Storage: S3 and Azure integration complete
 - 📝 Future: Electron desktop app for system audio capture
+- 📝 Future: Transcription with AssemblyAI
+- 📝 Future: Database persistence (currently in-memory)
