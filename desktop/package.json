@@ -1,0 +1,61 @@
+{
+  "name": "vaultscribe-desktop",
+  "version": "1.0.0",
+  "description": "Zero-knowledge meeting intelligence for everyone",
+  "main": "electron.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "NODE_ENV=development electron .",
+    "build": "electron-builder",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux"
+  },
+  "keywords": [
+    "transcription",
+    "meeting",
+    "recording",
+    "encryption",
+    "zero-knowledge",
+    "privacy",
+    "HIPAA",
+    "compliance"
+  ],
+  "author": "VaultScribe",
+  "license": "PROPRIETARY",
+  "dependencies": {
+    "electron": "^28.0.0",
+    "electron-store": "^8.1.0",
+    "dotenv": "^16.3.0"
+  },
+  "devDependencies": {
+    "electron-builder": "^24.6.0"
+  },
+  "build": {
+    "appId": "com.vaultscribe.desktop",
+    "productName": "VaultScribe",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron.js",
+      "preload.js",
+      "src/**/*",
+      "resources/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.business",
+      "target": ["dmg", "zip"],
+      "icon": "resources/icon.icns"
+    },
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "resources/icon.ico"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Office",
+      "icon": "resources/icon.png"
+    }
+  }
+}

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>VaultScribe - Zero-Knowledge Meeting Intelligence</title>
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+  <!-- Main Container -->
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo">
+        <h1>🔒 VaultScribe</h1>
+        <p class="tagline">Zero-Knowledge Recording</p>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-item active" data-screen="dashboard">
+          🏠 Dashboard
+        </button>
+        <button class="nav-item" data-screen="record">
+          🎙️ Record
+        </button>
+        <button class="nav-item" data-screen="library">
+          📚 Library
+        </button>
+        <button class="nav-item" data-screen="settings">
+          ⚙️ Settings
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="status-item">
+          <span class="status-label">Encryption:</span>
+          <span class="status-value" id="encryption-status">🔓 Not Set</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Storage:</span>
+          <span class="status-value" id="storage-status">💾 Local</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Dashboard Screen -->
+      <div class="screen active" id="dashboard-screen">
+        <header class="screen-header">
+          <h2>Dashboard</h2>
+          <p class="subtitle">Quick access to your recordings</p>
+        </header>
+
+        <div class="dashboard-grid">
+          <!-- Quick Start Card -->
+          <div class="card card-primary">
+            <h3>🎙️ Quick Start Recording</h3>
+            <button class="btn btn-large btn-primary" id="quick-record-btn">
+              Start Recording Now
+            </button>
+            <p class="hint">Or go to Record screen for more options</p>
+          </div>
+
+          <!-- Stats Cards -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value" id="total-sessions">0</div>
+              <div class="stat-label">Total Sessions</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="total-duration">0h 0m</div>
+              <div class="stat-label">Total Duration</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="total-storage">0 MB</div>
+              <div class="stat-label">Storage Used</div>
+            </div>
+          </div>
+
+          <!-- Recent Sessions -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Recent Sessions</h3>
+              <button class="btn btn-text" id="view-all-sessions">View All →</button>
+            </div>
+            <div class="recent-sessions" id="recent-sessions-list">
+              <p class="empty-state">No sessions yet. Start your first recording!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Record Screen -->
+      <div class="screen" id="record-screen">
+        <header class="screen-header">
+          <h2>Record Session</h2>
+          <p class="subtitle">Capture and encrypt your meeting</p>
+        </header>
+
+        <!-- Setup Form (shown before recording) -->
+        <div class="record-setup" id="record-setup">
+          <div class="card">
+            <h3>Session Information</h3>
+
+            <div class="form-group">
+              <label for="matter-code">Matter Code *</label>
+              <input type="text" id="matter-code" placeholder="e.g., CASE-2024-001" required>
+              <p class="hint">Case number, client ID, or project code</p>
+            </div>
+
+            <div class="form-group">
+              <label for="client-code">Client Code</label>
+              <input type="text" id="client-code" placeholder="Optional">
+            </div>
+
+            <div class="form-group">
+              <label for="description">Description</label>
+              <textarea id="description" rows="3" placeholder="Optional notes about this session"></textarea>
+            </div>
+
+            <h3 style="margin-top: 2rem;">Audio Source</h3>
+
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="include-system-audio" checked>
+                Capture system audio (Zoom, Teams, Meet)
+              </label>
+              <p class="hint">Requires screen recording permission</p>
+            </div>
+
+            <div class="form-group" id="audio-source-group">
+              <label for="audio-source">Select Audio Source</label>
+              <select id="audio-source">
+                <option value="">Loading sources...</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="include-microphone" checked>
+                Include microphone
+              </label>
+            </div>
+
+            <button class="btn btn-large btn-success" id="start-recording-btn">
+              🎙️ Start Recording
+            </button>
+          </div>
+        </div>
+
+        <!-- Recording View (shown during recording) -->
+        <div class="record-active hidden" id="record-active">
+          <div class="card">
+            <div class="recording-header">
+              <div class="recording-indicator">
+                <span class="pulse"></span>
+                <span class="text">RECORDING</span>
+              </div>
+              <div class="recording-meta">
+                <span id="session-matter-code">CASE-2024-001</span>
+              </div>
+            </div>
+
+            <div class="recording-stats">
+              <div class="stat">
+                <div class="stat-label">Duration</div>
+                <div class="stat-value" id="recording-duration">00:00</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">File Size</div>
+                <div class="stat-value" id="recording-filesize">0 KB</div>
+              </div>
+            </div>
+
+            <div class="waveform" id="waveform">
+              <canvas id="waveform-canvas"></canvas>
+            </div>
+
+            <div class="recording-controls">
+              <button class="btn btn-secondary" id="pause-btn">⏸️ Pause</button>
+              <button class="btn btn-danger" id="stop-btn">⏹️ Stop Recording</button>
+            </div>
+
+            <p class="hint">Recording in the background. You can minimize this window.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Library Screen -->
+      <div class="screen" id="library-screen">
+        <header class="screen-header">
+          <h2>Session Library</h2>
+          <p class="subtitle">Browse and manage your recordings</p>
+        </header>
+
+        <div class="library-controls">
+          <input type="text" class="search-input" id="library-search" placeholder="🔍 Search sessions...">
+          <select class="filter-select" id="status-filter">
+            <option value="">All Statuses</option>
+            <option value="created">Created</option>
+            <option value="recording">Recording</option>
+            <option value="recorded">Recorded</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+
+        <div class="sessions-list" id="sessions-list">
+          <p class="empty-state">No sessions found</p>
+        </div>
+      </div>
+
+      <!-- Settings Screen -->
+      <div class="screen" id="settings-screen">
+        <header class="screen-header">
+          <h2>Settings</h2>
+          <p class="subtitle">Configure VaultScribe</p>
+        </header>
+
+        <div class="settings-content">
+          <div class="card">
+            <h3>🔐 Encryption</h3>
+
+            <div class="form-group">
+              <label for="encryption-passphrase">Encryption Passphrase</label>
+              <input type="password" id="encryption-passphrase" placeholder="Enter passphrase">
+              <p class="hint">
+                All recordings will be encrypted with this passphrase before storage.
+                <strong>Do not lose this passphrase - it cannot be recovered!</strong>
+              </p>
+            </div>
+
+            <button class="btn btn-primary" id="set-passphrase-btn">Set Passphrase</button>
+
+            <div class="passphrase-status" id="passphrase-status"></div>
+          </div>
+
+          <div class="card">
+            <h3>💾 Storage</h3>
+
+            <div class="form-group">
+              <label for="storage-provider">Storage Provider</label>
+              <select id="storage-provider">
+                <option value="local">Local Storage</option>
+                <option value="aws" disabled>AWS S3 (Coming Soon)</option>
+                <option value="azure" disabled>Azure Blob (Coming Soon)</option>
+                <option value="gcp" disabled>Google Cloud (Coming Soon)</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="local-storage-path-group">
+              <label for="local-storage-path">Local Storage Path</label>
+              <input type="text" id="local-storage-path" value="./recordings" readonly>
+              <p class="hint">Recordings are saved to this folder</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>ℹ️ About</h3>
+            <p><strong>VaultScribe Desktop</strong></p>
+            <p>Version: 1.0.0</p>
+            <p>Zero-knowledge meeting intelligence for everyone</p>
+            <br>
+            <p><strong>Features:</strong></p>
+            <ul>
+              <li>✅ System audio capture (Zoom/Teams/Meet)</li>
+              <li>✅ AES-256-GCM encryption</li>
+              <li>✅ Zero-knowledge architecture</li>
+              <li>✅ Customer-controlled storage</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/app.js"></script>
+</body>
+</html>
