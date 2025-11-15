@@ -1,217 +1,222 @@
 # VaultScribe Quick Start Guide
 
-Get VaultScribe running in 5 minutes!
+**Zero-Knowledge Desktop App for Meeting Intelligence**
 
-## ✅ What You Need
+---
 
-1. **API Keys** (required for full functionality):
-   - **AssemblyAI API Key** - For transcription → https://www.assemblyai.com/
-   - **Anthropic API Key** - For AI summaries → https://console.anthropic.com/
+## 🎯 Project Status
 
-2. **Optional** (for calendar integration):
-   - Microsoft Azure App (for Teams) → https://portal.azure.com/
-   - Google Calendar credentials → https://console.cloud.google.com/
+VaultScribe is a **desktop application** (Electron) with zero-knowledge architecture for regulated industries.
 
-## 🚀 Setup (2 minutes)
+**Current Phase:** Architecture & Planning Complete → Ready to Build
 
-### Step 1: Configure API Keys
+---
 
+## 📋 What's Available Now
+
+### ✅ Complete Documentation
+
+1. **DESKTOP_APP_ARCHITECTURE.md** - Full Electron app design with zero-knowledge architecture
+2. **DESKTOP_APP_IMPLEMENTATION.md** - 2-week build plan with daily tasks
+3. **FEATURE_ROADMAP.md** - 75+ enterprise features planned
+4. **SECURITY_IMPLEMENTATION.md** - Production-ready encryption code
+5. **PRIORITY_ROADMAP.md** - 16-week implementation timeline
+6. **EXECUTIVE_SUMMARY.md** - Business model and go-to-market strategy
+7. **REALIGNMENT.md** - Project vision and architecture decisions
+
+### ✅ Basic API (Needs Refactoring)
+
+- FastAPI backend running on port 8000
+- Session management endpoints
+- **Note:** Current API needs refactoring for zero-knowledge architecture
+
+---
+
+## 🏗️ Architecture Overview
+
+### Zero-Knowledge Flow
+
+```
+Desktop App (Customer's Computer)
+  ↓ Record system audio (Zoom/Teams/Meet)
+  ↓ Encrypt locally (AES-256-GCM)
+  ↓ Upload to customer's storage (AWS/Azure/GCP/On-prem)
+  ↓ Generate presigned URL
+  ↓ Call AssemblyAI with customer's API key
+  ↓ Receive encrypted transcript
+  ↓ Decrypt locally for display
+
+VaultScribe API (Metadata Only)
+  → Session IDs, timestamps, billing
+  → NEVER sees: audio, transcripts, PII
+```
+
+---
+
+## 🚀 Next Steps to Build Desktop App
+
+### Week 1: Core Functionality
+
+**Day 1-2: Project Setup**
 ```bash
-# Copy the example config
-cp api/.env.example api/.env
-
-# Edit the file and add your API keys
-nano api/.env  # or use your favorite editor
+# Set up Electron project
+npm init -y
+npm install electron electron-builder
+npm install electron-store
 ```
 
-**Minimum required in `api/.env`:**
-```env
-ASSEMBLYAI_API_KEY=your_actual_assemblyai_key_here
-ANTHROPIC_API_KEY=your_actual_anthropic_key_here
-```
+**Day 3: System Audio Capture**
+- Implement audio recording via Electron's desktopCapturer API
+- Record Zoom/Teams/Meet calls (system audio)
 
-### Step 2: Start the Servers
+**Day 4: Client-Side Encryption**
+- Implement AES-256-GCM encryption
+- PBKDF2 key derivation
+- All encryption happens locally
 
-**Terminal 1 - API Server:**
+**Day 5: Storage Integration**
+- AWS S3 client
+- Azure Blob Storage client
+- Upload encrypted audio to customer's storage
+
+### Week 2: UI & Packaging
+
+**Day 6-7: Desktop UI**
+- Setup screen (configure storage)
+- Recording interface
+- Transcript viewer
+
+**Day 8-9: Packaging**
+- electron-builder configuration
+- Windows/Mac/Linux installers
+- Code signing
+
+**Day 10: Testing**
+- End-to-end zero-knowledge flow
+- Multi-cloud storage testing
+- AssemblyAI integration testing
+
+---
+
+## 💡 Current API (For Reference)
+
+The existing API can be started for testing:
+
 ```bash
 ./start-api.sh
 ```
 
-**Terminal 2 - Web Interface:**
-```bash
-./start-web.sh
-```
+**Available at:** http://localhost:8000/docs
 
-## 🎯 Using VaultScribe
-
-### Open in Your Browser
-
-- **Main App:** http://localhost:8080
-- **Schedule Sessions:** http://localhost:8080/schedule.html
-- **API Docs:** http://localhost:8000/docs
-
-### Basic Workflow
-
-#### Option A: Record Now
-
-1. Go to http://localhost:8080
-2. Enter **Matter Code** (e.g., "2024-001")
-3. Click **"Start Recording Session"**
-4. Click **🎙️ Start Recording**
-5. Speak into your microphone
-6. Click **⏹️ Stop Recording**
-7. Click **📝 Transcribe Recording**
-8. Wait 1-2 minutes for transcription
-9. View transcript with AI summary!
-
-#### Option B: Schedule Future Session
-
-1. Go to http://localhost:8080/schedule.html
-2. Fill in meeting details:
-   - Matter Code
-   - Meeting Title
-   - Date & Time
-   - Attendees
-3. Toggle **"Create Microsoft Teams meeting"** if needed
-4. Click **"Schedule Recording Session"**
-5. Download the .ics calendar file
-6. Import to Outlook/Google Calendar
-
-## 📝 What Gets Generated
-
-After transcription, you get:
-
-✅ **Full Transcript** with speaker labels
-✅ **AI Executive Summary** (2-3 paragraphs)
-✅ **Action Items** extracted automatically
-✅ **Key Topics** identified
-✅ **Searchable Text** with highlighting
-✅ **Export Options** (TXT, JSON, ICS)
-
-## 🔍 Features Overview
-
-### Recording
-- Browser-based audio capture
-- Real-time audio visualizer
-- Duration and file size tracking
-- Matter code organization
-
-### Transcription
-- Powered by AssemblyAI
-- Speaker diarization (identifies who said what)
-- High accuracy
-- Timestamps for every word
-
-### AI Analysis
-- Claude AI generates summaries
-- Extracts action items
-- Identifies key topics
-- Suggests participants/roles
-
-### Search
-- Real-time transcript search
-- Highlights matching text
-- Shows match count
-- Auto-scrolls to results
-
-### Calendar Integration
-- Create Teams meetings
-- Export .ics calendar files
-- Schedule future sessions
-- Auto-start recording
-
-## 🎮 Testing Without Audio
-
-Want to test the UI without recording?
-
-1. Skip API keys for now
-2. Start the servers
-3. Explore the interface:
-   - Recording UI at http://localhost:8080
-   - Scheduling UI at http://localhost:8080/schedule.html
-   - Check API docs at http://localhost:8000/docs
-
-**Note:** Transcription won't work without valid API keys.
-
-## 📊 API Endpoints
-
-Full API documentation: http://localhost:8000/docs
-
-**Key Endpoints:**
-- `POST /api/session` - Create recording session
-- `POST /api/upload` - Upload audio file
-- `POST /api/transcribe` - Start transcription
-- `GET /api/transcript/{id}` - Get transcript
-- `POST /api/calendar/schedule-session` - Schedule meeting
-- `GET /api/calendar/export-ics/{id}` - Export calendar
-
-## 🔒 Security Notes
-
-- `.env` file is git-ignored (safe)
-- Audio files stored in `api/uploads/` (git-ignored)
-- CORS configured for localhost only
-- Webhook signatures verified for Teams integration
-
-## 🐛 Troubleshooting
-
-### "AssemblyAI API key not provided"
-➜ Add your key to `api/.env`:
-```env
-ASSEMBLYAI_API_KEY=your_key_here
-```
-
-### "Anthropic API key not provided"
-➜ Add your key to `api/.env`:
-```env
-ANTHROPIC_API_KEY=your_key_here
-```
-
-### "Microphone not accessible"
-➜ Grant browser microphone permissions when prompted
-
-### Transcription takes forever
-➜ Normal for long recordings. AssemblyAI processes at ~1x speed (5 min audio = ~5 min processing)
-
-### Can't access from other devices
-➜ API server binds to 0.0.0.0, but you may need to:
-1. Open firewall ports 8000 and 8080
-2. Update CORS_ORIGINS in `.env`
-
-## 📚 Next Steps
-
-### For Production Use
-
-1. **Set up database** - Replace in-memory storage with PostgreSQL
-2. **Configure Azure Blob Storage** - For scalable audio storage
-3. **Set up Teams app** - Register in Azure for full Teams integration
-4. **Add authentication** - Protect API endpoints
-5. **Configure HTTPS** - Use SSL certificates
-
-### For Development
-
-1. **Add unit tests** - Test transcription/AI services
-2. **Add PDF export** - Currently shows placeholder
-3. **Implement database models** - SQLAlchemy schemas
-4. **Add user management** - Multi-tenant support
-5. **Enhance search** - Add filters, date ranges, matter code search
-
-## 💡 Tips
-
-- **Best audio quality:** Use external microphone in quiet room
-- **Matter codes:** Use consistent format (e.g., YEAR-NUMBER)
-- **Scheduling:** Set up recurring depositions in advance
-- **Search:** Search by speaker, topic, or specific terms
-- **Export:** Download JSON for programmatic access
-
-## 🆘 Need Help?
-
-- **API Issues:** Check http://localhost:8000/health
-- **Integration Status:** Visit http://localhost:8000/api/integrations/status
-- **Browser Console:** Press F12 to see JavaScript errors
-- **Server Logs:** Check terminal where `start-api.sh` is running
+**Note:** This API needs refactoring to support zero-knowledge architecture (metadata-only, no audio/transcript storage).
 
 ---
 
-**Built for law firms who need accurate, AI-enhanced transcription.**
+## 🔑 Key Principles
 
-Enjoy VaultScribe! 🎉
+1. **Desktop Application** - Electron (Windows/Mac/Linux), NOT web browser
+2. **Zero-Knowledge** - VaultScribe never sees plaintext audio or transcripts
+3. **Customer Storage** - AWS S3/Azure Blob/GCP/On-prem SFTP
+4. **System Audio** - Record Zoom/Teams/Meet calls via desktopCapturer
+5. **Client-Side Encryption** - AES-256-GCM encryption before upload
+6. **Enterprise Compliance** - HIPAA, SOC2, FedRAMP ready
+
+---
+
+## 📖 Recommended Reading Order
+
+1. **REALIGNMENT.md** - Understand the project vision and why desktop app
+2. **DESKTOP_APP_ARCHITECTURE.md** - Complete technical architecture
+3. **DESKTOP_APP_IMPLEMENTATION.md** - Day-by-day build plan
+4. **FEATURE_ROADMAP.md** - Full feature set (75+ features)
+5. **EXECUTIVE_SUMMARY.md** - Business model and pricing
+
+---
+
+## 🎯 Target Market
+
+**Industries:**
+- Legal (law firms, legal departments)
+- Medical (healthcare providers, hospitals)
+- Financial (banks, investment firms)
+- Government (agencies, contractors)
+
+**Pricing:**
+- Starter: $199/month (1-5 users)
+- Professional: $999/month (6-25 users)
+- Enterprise: $3K-$10K/month (unlimited users)
+
+**Key Differentiators:**
+- Zero-knowledge architecture
+- Customer-controlled storage
+- Multi-industry compliance
+- System audio capture (not just microphone)
+
+---
+
+## 🛠️ Development Environment
+
+**Required:**
+- Node.js 18+ (for Electron)
+- Python 3.11+ (for API)
+- Git
+
+**API Keys (for transcription):**
+- AssemblyAI API key → https://www.assemblyai.com/
+- Anthropic API key (optional, for AI summaries) → https://console.anthropic.com/
+
+**Storage Credentials (customer provides):**
+- AWS IAM credentials (S3 access)
+- Azure Storage Account credentials
+- GCP Service Account (optional)
+- SFTP credentials (for on-premise)
+
+---
+
+## 📝 Current Sprint
+
+See **TASKS.md** for current development status.
+
+**Completed:**
+- ✅ Architecture design
+- ✅ Implementation plan
+- ✅ Business strategy
+- ✅ Feature roadmap
+
+**Next:**
+- [ ] Set up Electron project
+- [ ] Implement system audio capture
+- [ ] Implement client-side encryption
+- [ ] Build storage integrations
+
+---
+
+## 🔒 Security Notes
+
+**Zero-Knowledge Architecture:**
+- Encryption keys never leave customer's computer
+- VaultScribe API never sees audio or transcripts
+- Customer controls all data storage
+- Presigned URLs used for third-party services (AssemblyAI)
+
+**Compliance Ready:**
+- HIPAA (healthcare)
+- SOC2 (enterprise)
+- FedRAMP (government)
+- GDPR (international)
+
+---
+
+## 🆘 Questions?
+
+Review the comprehensive documentation:
+
+- **Architecture Questions** → DESKTOP_APP_ARCHITECTURE.md
+- **Implementation Questions** → DESKTOP_APP_IMPLEMENTATION.md
+- **Business Questions** → EXECUTIVE_SUMMARY.md
+- **Feature Questions** → FEATURE_ROADMAP.md
+- **Security Questions** → SECURITY_IMPLEMENTATION.md
+
+---
+
+**Ready to build the real VaultScribe.** 🚀
