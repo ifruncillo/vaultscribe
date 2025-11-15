@@ -21,7 +21,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true
+      sandbox: false
     },
     title: 'VaultScribe',
     backgroundColor: '#1e3a8a',
@@ -35,10 +35,17 @@ function createWindow() {
     mainWindow.show();
   });
 
-  // Open DevTools in development
-  if (process.env.NODE_ENV === 'development') {
-    mainWindow.webContents.openDevTools();
-  }
+  // Open DevTools to help debug
+  mainWindow.webContents.openDevTools();
+
+  // Log renderer errors
+  mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+    console.log(`[Renderer ${level}]:`, message, `(${sourceId}:${line})`);
+  });
+
+  mainWindow.webContents.on('crashed', (event, killed) => {
+    console.error('Renderer process crashed:', { killed });
+  });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
