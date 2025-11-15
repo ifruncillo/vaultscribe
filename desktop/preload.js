@@ -15,10 +15,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Recording controls
   startRecording: (options) => ipcRenderer.invoke('start-recording', options),
-  stopRecording: () => ipcRenderer.invoke('stop-recording'),
+  stopRecording: (recordingData) => ipcRenderer.invoke('stop-recording', recordingData),
   pauseRecording: () => ipcRenderer.invoke('pause-recording'),
   resumeRecording: () => ipcRenderer.invoke('resume-recording'),
   getRecordingStatus: () => ipcRenderer.invoke('get-recording-status'),
+
+  // File system operations
+  saveRecording: (audioBlob, sessionId) => ipcRenderer.invoke('save-recording', audioBlob, sessionId),
 
   // Encryption
   setEncryptionPassphrase: (passphrase) => ipcRenderer.invoke('set-encryption-passphrase', passphrase),

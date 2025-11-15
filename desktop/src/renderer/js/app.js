@@ -10,6 +10,14 @@ let currentSession = null;
 let recordingInterval = null;
 let waveformAnimationId = null;
 
+// Audio recording state
+let mediaRecorder = null;
+let audioChunks = [];
+let recordingState = 'idle'; // idle, recording, paused
+let startTime = null;
+let pausedDuration = 0;
+let lastPauseTime = null;
+
 // Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
   console.log('VaultScribe app initialized');
@@ -199,14 +207,37 @@ async function startRecording() {
 
     console.log('Session created:', currentSession);
 
-    // Start recording
-    const result = await window.electronAPI.startRecording({
-      sessionId: currentSession.sessionId,
-      sourceId: audioSourceId,
-      includeMicrophone
+    // Get audio stream
+    const stream = await getAudioStream(audioSourceId, includeMicrophone);
+
+    // Set up MediaRecorder
+    mediaRecorder = new MediaRecorder(stream, {
+      mimeType: 'audio/webm;codecs=opus',
+      audioBitsPerSecond: 128000
     });
 
-    console.log('Recording started:', result);
+    audioChunks = [];
+    recordingState = 'recording';
+    startTime = Date.now();
+    pausedDuration = 0;
+
+    // Handle data availability
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        audioChunks.push(event.data);
+      }
+    };
+
+    // Handle errors
+    mediaRecorder.onerror = (error) => {
+      console.error('MediaRecorder error:', error);
+      showError('Recording error: ' + error.message);
+    };
+
+    // Start recording
+    mediaRecorder.start(1000); // Collect data every second
+
+    console.log('Recording started');
 
     // Update UI
     document.getElementById('record-setup').classList.add('hidden');
@@ -225,19 +256,88 @@ async function startRecording() {
   }
 }
 
+async function getAudioStream(sourceId, includeMicrophone) {
+  let audioTracks = [];
+
+  // Get system audio if source ID provided
+  if (sourceId) {
+    try {
+      const systemStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          mandatory: {
+            chromeMediaSource: 'desktop',
+            chromeMediaSourceId: sourceId
+          }
+        },
+        video: {
+          mandatory: {
+            chromeMediaSource: 'desktop',
+            chromeMediaSourceId: sourceId
+          }
+        }
+      });
+
+      // Extract only audio track
+      const systemAudioTrack = systemStream.getAudioTracks()[0];
+      if (systemAudioTrack) {
+        audioTracks.push(systemAudioTrack);
+      }
+
+      // Stop video track (we don't need it)
+      systemStream.getVideoTracks().forEach(track => track.stop());
+    } catch (error) {
+      console.error('Error getting system audio:', error);
+      throw new Error('Failed to capture system audio. Make sure screen recording permission is granted.');
+    }
+  }
+
+  // Get microphone if requested
+  if (includeMicrophone) {
+    try {
+      const micStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 16000
+        }
+      });
+
+      const micAudioTrack = micStream.getAudioTracks()[0];
+      if (micAudioTrack) {
+        audioTracks.push(micAudioTrack);
+      }
+    } catch (error) {
+      console.error('Error getting microphone:', error);
+      console.warn('Continuing without microphone');
+    }
+  }
+
+  if (audioTracks.length === 0) {
+    throw new Error('No audio sources available');
+  }
+
+  // Create combined stream
+  return new MediaStream(audioTracks);
+}
+
 async function togglePause() {
   const btn = document.getElementById('pause-btn');
 
   try {
-    const status = await window.electronAPI.getRecordingStatus();
-
-    if (status.state === 'recording') {
-      await window.electronAPI.pauseRecording();
+    if (recordingState === 'recording') {
+      mediaRecorder.pause();
+      recordingState = 'paused';
+      lastPauseTime = Date.now();
       btn.textContent = '▶️ Resume';
       btn.classList.remove('btn-secondary');
       btn.classList.add('btn-success');
-    } else if (status.state === 'paused') {
-      await window.electronAPI.resumeRecording();
+    } else if (recordingState === 'paused') {
+      mediaRecorder.resume();
+      recordingState = 'recording';
+      if (lastPauseTime) {
+        pausedDuration += Date.now() - lastPauseTime;
+        lastPauseTime = null;
+      }
       btn.textContent = '⏸️ Pause';
       btn.classList.remove('btn-success');
       btn.classList.add('btn-secondary');
@@ -254,19 +354,57 @@ async function stopRecording() {
   }
 
   try {
-    // Stop recording
-    const result = await window.electronAPI.stopRecording();
+    // Stop the MediaRecorder
+    mediaRecorder.stop();
+
+    // Wait for the recording to finish processing
+    await new Promise((resolve) => {
+      mediaRecorder.onstop = resolve;
+    });
+
+    // Calculate duration
+    const endTime = Date.now();
+    const duration = endTime - startTime - pausedDuration;
+
+    // Create blob from chunks
+    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+
+    // Convert blob to array buffer
+    const arrayBuffer = await audioBlob.arrayBuffer();
+
+    // Save recording to file system via IPC
+    const saveResult = await window.electronAPI.saveRecording(arrayBuffer, currentSession.sessionId);
+
+    // Send to main process for encryption
+    const result = await window.electronAPI.stopRecording({
+      audioPath: saveResult.audioPath,
+      duration: duration,
+      fileSize: saveResult.fileSize
+    });
 
     console.log('Recording stopped:', result);
 
     // Update session
     await window.electronAPI.updateSession(currentSession.sessionId, {
       audioPath: result.audioPath,
-      duration: result.duration,
+      duration: duration,
       fileSize: result.fileSize,
       encrypted: result.encrypted || false,
       status: 'recorded'
     });
+
+    // Stop media tracks
+    if (mediaRecorder && mediaRecorder.stream) {
+      mediaRecorder.stream.getTracks().forEach(track => track.stop());
+    }
+
+    // Reset state
+    mediaRecorder = null;
+    audioChunks = [];
+    recordingState = 'idle';
+    startTime = null;
+    pausedDuration = 0;
+    lastPauseTime = null;
 
     // Stop updates
     stopRecordingUpdates();
@@ -281,7 +419,7 @@ async function stopRecording() {
     document.getElementById('description').value = '';
 
     // Show success message
-    showSuccess(`Recording saved successfully!\n\nDuration: ${formatDuration(result.duration)}\nFile size: ${formatFileSize(result.fileSize)}\nEncrypted: ${result.encrypted ? 'Yes' : 'No'}`);
+    showSuccess(`Recording saved successfully!\n\nDuration: ${formatDuration(duration)}\nFile size: ${formatFileSize(result.fileSize)}\nEncrypted: ${result.encrypted ? 'Yes' : 'No'}`);
 
     // Refresh dashboard
     loadDashboardData();
@@ -295,16 +433,22 @@ async function stopRecording() {
 }
 
 function startRecordingUpdates() {
-  recordingInterval = setInterval(async () => {
+  recordingInterval = setInterval(() => {
     try {
-      const status = await window.electronAPI.getRecordingStatus();
+      if (recordingState !== 'idle' && startTime) {
+        const currentPausedDuration = recordingState === 'paused' && lastPauseTime
+          ? pausedDuration + (Date.now() - lastPauseTime)
+          : pausedDuration;
 
-      // Update duration
-      document.getElementById('recording-duration').textContent = formatDuration(status.duration);
+        const duration = Date.now() - startTime - currentPausedDuration;
 
-      // Update file size
-      document.getElementById('recording-filesize').textContent = formatFileSize(status.fileSize);
+        // Update duration
+        document.getElementById('recording-duration').textContent = formatDuration(duration);
 
+        // Estimate file size (rough estimate: 16KB per second for webm)
+        const fileSize = Math.floor((duration / 1000) * 16 * 1024);
+        document.getElementById('recording-filesize').textContent = formatFileSize(fileSize);
+      }
     } catch (error) {
       console.error('Error updating recording status:', error);
     }

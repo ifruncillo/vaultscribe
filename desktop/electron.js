@@ -3,12 +3,11 @@ const path = require('path');
 const fs = require('fs');
 
 // Services
-const AudioCapture = require('./src/main/services/audio-capture');
+// Note: AudioCapture is handled in renderer process due to browser API requirements
 const EncryptionService = require('./src/main/services/encryption');
 const SessionManager = require('./src/main/services/session-manager');
 
 let mainWindow;
-let audioCapture;
 let encryptionService;
 let sessionManager;
 
@@ -48,7 +47,6 @@ function createWindow() {
 
 // Initialize services
 function initializeServices() {
-  audioCapture = new AudioCapture();
   encryptionService = new EncryptionService();
   sessionManager = new SessionManager();
 
@@ -105,23 +103,38 @@ ipcMain.handle('create-session', async (event, sessionData) => {
   }
 });
 
-// Start recording
+// Audio recording handlers
+// Note: Audio capture is handled in renderer process due to browser API requirements
+// These handlers provide file encryption after recording is complete in renderer
+
+let pendingRecordingData = null;
+
 ipcMain.handle('start-recording', async (event, options) => {
   try {
-    const result = await audioCapture.startRecording(options);
-    return result;
+    // Store session info for later use
+    pendingRecordingData = {
+      sessionId: options.sessionId,
+      startTime: Date.now()
+    };
+
+    // Return success - actual recording happens in renderer process
+    return {
+      success: true,
+      sessionId: options.sessionId,
+      startTime: pendingRecordingData.startTime
+    };
   } catch (error) {
     console.error('Error starting recording:', error);
     throw error;
   }
 });
 
-// Stop recording
-ipcMain.handle('stop-recording', async () => {
+ipcMain.handle('stop-recording', async (event, recordingData) => {
   try {
-    const result = await audioCapture.stopRecording();
+    // recordingData should include: { audioPath, duration, fileSize }
+    let result = { ...recordingData };
 
-    // Encrypt the recorded file
+    // Encrypt the recorded file if encryption is enabled
     if (result.audioPath && encryptionService.isEnabled()) {
       const encryptedPath = await encryptionService.encryptFile(result.audioPath);
 
@@ -132,6 +145,7 @@ ipcMain.handle('stop-recording', async () => {
       result.encrypted = true;
     }
 
+    pendingRecordingData = null;
     return result;
   } catch (error) {
     console.error('Error stopping recording:', error);
@@ -139,29 +153,50 @@ ipcMain.handle('stop-recording', async () => {
   }
 });
 
-// Pause recording
 ipcMain.handle('pause-recording', async () => {
-  try {
-    return await audioCapture.pauseRecording();
-  } catch (error) {
-    console.error('Error pausing recording:', error);
-    throw error;
-  }
+  // Handled in renderer process
+  return { success: true, state: 'paused' };
 });
 
-// Resume recording
 ipcMain.handle('resume-recording', async () => {
-  try {
-    return await audioCapture.resumeRecording();
-  } catch (error) {
-    console.error('Error resuming recording:', error);
-    throw error;
-  }
+  // Handled in renderer process
+  return { success: true, state: 'recording' };
 });
 
-// Get recording status
 ipcMain.handle('get-recording-status', () => {
-  return audioCapture.getStatus();
+  // Handled in renderer process
+  return { state: 'idle', duration: 0, fileSize: 0 };
+});
+
+// File system handler for saving recordings from renderer
+ipcMain.handle('save-recording', async (event, audioBuffer, sessionId) => {
+  try {
+    const recordingsDir = path.join(process.cwd(), 'recordings');
+
+    // Create recordings directory if it doesn't exist
+    if (!fs.existsSync(recordingsDir)) {
+      fs.mkdirSync(recordingsDir, { recursive: true });
+    }
+
+    // Generate filename
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `recording-${sessionId}-${timestamp}.webm`;
+    const audioPath = path.join(recordingsDir, filename);
+
+    // Save the buffer
+    fs.writeFileSync(audioPath, Buffer.from(audioBuffer));
+
+    console.log('Recording saved:', audioPath);
+
+    return {
+      success: true,
+      audioPath,
+      fileSize: fs.statSync(audioPath).size
+    };
+  } catch (error) {
+    console.error('Error saving recording:', error);
+    throw error;
+  }
 });
 
 // Encryption handlers
