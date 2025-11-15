@@ -1,5 +1,4 @@
 const Store = require('electron-store');
-const { v4: uuidv4 } = require('crypto').randomUUID ? { v4: require('crypto').randomUUID } : require('uuid');
 const path = require('path');
 const fs = require('fs');
 
