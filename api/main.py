@@ -1,11 +1,33 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, File, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 import hashlib
 import secrets
+import os
+from pathlib import Path
 
 app = FastAPI(title="VaultScribe API", version="0.1.0")
+
+# Enable CORS for local development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify exact origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Get the base directory
+BASE_DIR = Path(__file__).resolve().parent.parent
+WEB_DIR = BASE_DIR / "web"
+UPLOADS_DIR = BASE_DIR / "uploads"
+
+# Create uploads directory if it doesn't exist
+UPLOADS_DIR.mkdir(exist_ok=True)
 
 # Data models
 class SessionRequest(BaseModel):
@@ -69,3 +91,44 @@ def get_session(session_id: str):
     if session_id not in sessions:
         raise HTTPException(status_code=404, detail="Session not found")
     return sessions[session_id]
+
+@app.post("/api/session/{session_id}/upload")
+async def upload_recording(session_id: str, file: UploadFile = File(...)):
+    """Upload audio recording for a session"""
+    if session_id not in sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    # Save the file
+    file_path = UPLOADS_DIR / f"{session_id}_{file.filename}"
+
+    try:
+        contents = await file.read()
+        with open(file_path, "wb") as f:
+            f.write(contents)
+
+        # Update session
+        sessions[session_id]["file_path"] = str(file_path)
+        sessions[session_id]["file_size"] = len(contents)
+        sessions[session_id]["status"] = "uploaded"
+
+        return {
+            "success": True,
+            "session_id": session_id,
+            "file_size": len(contents),
+            "message": "File uploaded successfully"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
+# Serve the web app
+@app.get("/app")
+async def serve_app():
+    """Serve the web application"""
+    index_path = WEB_DIR / "index.html"
+    if not index_path.exists():
+        raise HTTPException(status_code=404, detail="Web app not found")
+    return FileResponse(index_path)
+
+# Mount static files
+if WEB_DIR.exists():
+    app.mount("/static", StaticFiles(directory=WEB_DIR), name="static")

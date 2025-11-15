@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VaultScribe - Zero-Knowledge Meeting Intelligence</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+      color: #1f2937;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      color: white;
+      margin-bottom: 2rem;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+
+    .tagline {
+      font-size: 1rem;
+      opacity: 0.9;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      margin-bottom: 1rem;
+    }
+
+    .card h2 {
+      margin-bottom: 1.5rem;
+      color: #1e3a8a;
+      font-size: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 6px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+      width: 100%;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #2563eb;
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #dc2626;
+    }
+
+    .btn-secondary {
+      background: #6b7280;
+      color: white;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #4b5563;
+    }
+
+    .btn-large {
+      padding: 1.25rem 2rem;
+      font-size: 1.25rem;
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+
+    .btn-text {
+      background: transparent;
+      color: #6b7280;
+      padding: 0.5rem;
+    }
+
+    .btn-text:hover {
+      color: #1f2937;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .session-info {
+      background: #f3f4f6;
+      padding: 1rem;
+      border-radius: 6px;
+      margin-bottom: 1.5rem;
+    }
+
+    .session-info p {
+      margin-bottom: 0.5rem;
+    }
+
+    .session-info p:last-child {
+      margin-bottom: 0;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      background: #10b981;
+      color: white;
+      border-radius: 12px;
+      font-size: 0.875rem;
+    }
+
+    .recording-info {
+      background: #fee2e2;
+      padding: 1rem;
+      border-radius: 6px;
+      border: 2px solid #ef4444;
+      margin-bottom: 1.5rem;
+    }
+
+    .recording-indicator {
+      font-weight: 700;
+      color: #dc2626;
+      margin-bottom: 0.5rem;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.7;
+      }
+    }
+
+    .alert {
+      padding: 1rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    .alert-success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 2px solid #10b981;
+    }
+
+    .alert-error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 2px solid #ef4444;
+    }
+
+    .alert-info {
+      background: #dbeafe;
+      color: #1e40af;
+      border: 2px solid #3b82f6;
+    }
+
+    footer {
+      text-align: center;
+      color: white;
+      opacity: 0.8;
+      font-size: 0.875rem;
+      padding: 1rem 0;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .audio-visualizer {
+      width: 100%;
+      height: 60px;
+      background: #1f2937;
+      border-radius: 6px;
+      margin: 1rem 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔐 VaultScribe</h1>
+      <p class="tagline">Zero-Knowledge Meeting Intelligence</p>
+    </header>
+
+    <div id="alert-container"></div>
+
+    <main>
+      <!-- Setup Card -->
+      <div class="card" id="setup-card">
+        <h2>New Recording Session</h2>
+        <form id="session-form">
+          <div class="form-group">
+            <label for="matter-code">Matter Code:</label>
+            <input type="text" id="matter-code" placeholder="e.g., 2024-001" required>
+          </div>
+
+          <div class="form-group">
+            <label for="client-code">Client Code:</label>
+            <input type="text" id="client-code" placeholder="e.g., ACME Corp">
+          </div>
+
+          <div class="form-group">
+            <label for="description">Description:</label>
+            <textarea id="description" rows="3" placeholder="Brief description of the meeting..."></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="create-session-btn">
+            Create Session
+          </button>
+        </form>
+      </div>
+
+      <!-- Recording Card -->
+      <div class="card hidden" id="recording-card">
+        <h2>Recording Session</h2>
+        <div class="session-info">
+          <p><strong>Session ID:</strong> <span id="session-id"></span></p>
+          <p><strong>Matter Code:</strong> <span id="display-matter-code"></span></p>
+          <p><strong>Status:</strong> <span id="status" class="status-badge">Ready</span></p>
+        </div>
+
+        <div class="recording-controls">
+          <button class="btn btn-danger btn-large" id="start-recording-btn">
+            ⏺ Start Recording
+          </button>
+          <button class="btn btn-secondary btn-large hidden" id="stop-recording-btn">
+            ⏹ Stop Recording
+          </button>
+        </div>
+
+        <div class="recording-info hidden" id="recording-info">
+          <p class="recording-indicator">🔴 Recording in progress...</p>
+          <p><strong>Duration:</strong> <span id="duration">00:00</span></p>
+          <p><strong>Size:</strong> <span id="file-size">0 KB</span></p>
+          <canvas id="visualizer" class="audio-visualizer"></canvas>
+        </div>
+
+        <button class="btn btn-text" id="new-session-btn">
+          ← New Session
+        </button>
+      </div>
+    </main>
+
+    <footer>
+      <p>All recordings are encrypted and stored in your controlled infrastructure</p>
+      <p style="margin-top: 0.5rem; font-size: 0.75rem;">API: <span id="api-status">Checking...</span></p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

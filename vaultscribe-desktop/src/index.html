@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VaultScribe</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔐 VaultScribe</h1>
+      <p class="tagline">Zero-Knowledge Meeting Intelligence</p>
+    </header>
+
+    <main>
+      <div class="card" id="setup-card">
+        <h2>New Recording Session</h2>
+        <form id="session-form">
+          <div class="form-group">
+            <label for="matter-code">Matter Code:</label>
+            <input type="text" id="matter-code" placeholder="e.g., 2024-001" required>
+          </div>
+
+          <div class="form-group">
+            <label for="client-code">Client Code:</label>
+            <input type="text" id="client-code" placeholder="e.g., ACME Corp">
+          </div>
+
+          <div class="form-group">
+            <label for="description">Description:</label>
+            <textarea id="description" rows="3" placeholder="Brief description of the meeting..."></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="create-session-btn">
+            Create Session
+          </button>
+        </form>
+      </div>
+
+      <div class="card" id="recording-card" style="display: none;">
+        <h2>Recording Session</h2>
+        <div class="session-info">
+          <p><strong>Session ID:</strong> <span id="session-id"></span></p>
+          <p><strong>Matter Code:</strong> <span id="display-matter-code"></span></p>
+          <p><strong>Status:</strong> <span id="status" class="status-badge">Ready</span></p>
+        </div>
+
+        <div class="recording-controls">
+          <button class="btn btn-danger btn-large" id="start-recording-btn">
+            ⏺ Start Recording
+          </button>
+          <button class="btn btn-secondary btn-large" id="stop-recording-btn" style="display: none;">
+            ⏹ Stop Recording
+          </button>
+        </div>
+
+        <div class="recording-info" id="recording-info" style="display: none;">
+          <p class="recording-indicator">🔴 Recording in progress...</p>
+          <p><strong>Duration:</strong> <span id="duration">00:00</span></p>
+        </div>
+
+        <button class="btn btn-text" id="new-session-btn">
+          ← New Session
+        </button>
+      </div>
+
+      <div class="status-message" id="status-message" style="display: none;"></div>
+    </main>
+
+    <footer>
+      <p>All recordings are encrypted and stored in your controlled infrastructure</p>
+    </footer>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
