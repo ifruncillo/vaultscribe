@@ -25,9 +25,15 @@
     }
 
     .header {
-      text-align: center;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       color: white;
       margin-bottom: 2rem;
+    }
+
+    .header > div {
+      text-align: left;
     }
 
     .header h1 {
@@ -212,8 +218,13 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>VaultScribe</h1>
-      <p>Legal Recording & AI-Powered Transcription</p>
+      <div>
+        <h1>VaultScribe</h1>
+        <p>Legal Recording & AI-Powered Transcription</p>
+      </div>
+      <a href="schedule.html" style="color: white; text-decoration: none; padding: 0.75rem 1.5rem; background: rgba(255, 255, 255, 0.2); border-radius: 8px; font-weight: 600; transition: background 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+        📅 Schedule Session
+      </a>
     </div>
 
     <!-- Session Setup -->

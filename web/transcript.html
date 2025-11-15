@@ -257,6 +257,47 @@
       border-radius: 8px;
       border-left: 4px solid #ef4444;
     }
+
+    .search-box {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+
+    .search-box input {
+      flex: 1;
+      padding: 0.75rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    .search-stats {
+      font-size: 0.875rem;
+      color: #6b7280;
+      white-space: nowrap;
+    }
+
+    .highlight {
+      background-color: #fef08a;
+      font-weight: 600;
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+
+    .current-highlight {
+      background-color: #fbbf24;
+    }
+
+    .hidden-by-search {
+      display: none !important;
+    }
   </style>
 </head>
 <body>
@@ -303,6 +344,17 @@
       <!-- Transcript -->
       <div class="card transcript-section">
         <h2>Transcript</h2>
+
+        <div class="search-box">
+          <input
+            type="text"
+            id="search-input"
+            placeholder="Search transcript..."
+            autocomplete="off"
+          >
+          <button class="btn btn-secondary" id="clear-search">Clear</button>
+          <span class="search-stats" id="search-stats"></span>
+        </div>
 
         <div class="transcript-controls">
           <button id="view-speaker" class="active">Speaker View</button>
@@ -440,6 +492,100 @@
       document.getElementById('view-speaker').classList.remove('active');
       showPlainView();
     });
+
+    // Search functionality
+    let searchMatches = [];
+    let currentMatchIndex = -1;
+
+    const searchInput = document.getElementById('search-input');
+    const searchStats = document.getElementById('search-stats');
+    const clearSearchBtn = document.getElementById('clear-search');
+
+    searchInput.addEventListener('input', debounce(performSearch, 300));
+    clearSearchBtn.addEventListener('click', clearSearch);
+
+    function performSearch() {
+      const query = searchInput.value.trim().toLowerCase();
+
+      if (!query) {
+        clearSearch();
+        return;
+      }
+
+      // Remove previous highlights
+      clearHighlights();
+      searchMatches = [];
+
+      const utterances = document.querySelectorAll('.utterance');
+      let matchCount = 0;
+
+      utterances.forEach((utterance, index) => {
+        const text = utterance.querySelector('.utterance-text');
+        const originalText = text.textContent;
+        const lowerText = originalText.toLowerCase();
+
+        if (lowerText.includes(query)) {
+          // Highlight matches
+          const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
+          const highlightedText = originalText.replace(regex, '<span class="highlight">$1</span>');
+          text.innerHTML = highlightedText;
+
+          searchMatches.push(utterance);
+          matchCount++;
+          utterance.classList.remove('hidden-by-search');
+        } else {
+          utterance.classList.add('hidden-by-search');
+        }
+      });
+
+      // Update stats
+      if (matchCount > 0) {
+        searchStats.textContent = `${matchCount} match${matchCount !== 1 ? 'es' : ''} found`;
+        // Scroll to first match
+        searchMatches[0]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        searchStats.textContent = 'No matches found';
+      }
+    }
+
+    function clearSearch() {
+      searchInput.value = '';
+      clearHighlights();
+
+      // Show all utterances
+      document.querySelectorAll('.utterance').forEach(utterance => {
+        utterance.classList.remove('hidden-by-search');
+      });
+
+      searchStats.textContent = '';
+      searchMatches = [];
+      currentMatchIndex = -1;
+    }
+
+    function clearHighlights() {
+      const utterances = document.querySelectorAll('.utterance-text');
+      utterances.forEach(text => {
+        if (text.querySelector('.highlight')) {
+          text.innerHTML = text.textContent;
+        }
+      });
+    }
+
+    function escapeRegex(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
 
     // Export functions
     document.getElementById('export-pdf').addEventListener('click', () => {

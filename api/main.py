@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 
 from services.transcription import TranscriptionService
 from services.ai_summary import AISummaryService
+from services.calendar_integration import CalendarIntegrationService, TeamsWebhookHandler
 
 # Load environment variables
 load_dotenv()
@@ -50,6 +51,8 @@ transcripts = {}
 # Initialize services (will be lazy-loaded)
 _transcription_service = None
 _ai_summary_service = None
+_calendar_service = None
+_teams_webhook_handler = None
 
 
 def get_transcription_service() -> TranscriptionService:
@@ -66,6 +69,22 @@ def get_ai_summary_service() -> AISummaryService:
     if _ai_summary_service is None:
         _ai_summary_service = AISummaryService()
     return _ai_summary_service
+
+
+def get_calendar_service() -> CalendarIntegrationService:
+    """Get or create calendar integration service instance"""
+    global _calendar_service
+    if _calendar_service is None:
+        _calendar_service = CalendarIntegrationService()
+    return _calendar_service
+
+
+def get_teams_webhook_handler() -> TeamsWebhookHandler:
+    """Get or create Teams webhook handler instance"""
+    global _teams_webhook_handler
+    if _teams_webhook_handler is None:
+        _teams_webhook_handler = TeamsWebhookHandler()
+    return _teams_webhook_handler
 
 @app.get("/")
 def root():
@@ -240,4 +259,252 @@ def list_sessions():
     return {
         "sessions": list(sessions.values()),
         "count": len(sessions)
+    }
+
+
+# ============================================================================
+# Calendar and Teams Integration Endpoints
+# ============================================================================
+
+@app.post("/api/calendar/create-meeting")
+async def create_calendar_meeting(request: dict):
+    """
+    Create a Teams meeting or calendar event
+
+    Request body:
+    {
+        "subject": "Deposition - Smith v. Jones",
+        "start_time": "2024-01-15T10:00:00",
+        "end_time": "2024-01-15T12:00:00",
+        "attendees": ["attorney@lawfirm.com"],
+        "matter_code": "2024-001",
+        "description": "Client deposition",
+        "create_teams_meeting": true
+    }
+    """
+    try:
+        calendar_service = get_calendar_service()
+
+        # Parse times
+        start_time = datetime.fromisoformat(request["start_time"])
+        end_time = datetime.fromisoformat(request["end_time"])
+
+        if request.get("create_teams_meeting"):
+            # Create Teams meeting
+            meeting = calendar_service.create_teams_meeting(
+                subject=request["subject"],
+                start_time=start_time,
+                end_time=end_time,
+                attendees=request.get("attendees", []),
+                matter_code=request.get("matter_code"),
+                description=request.get("description")
+            )
+
+            return {
+                "success": True,
+                "meeting": meeting,
+                "join_url": meeting["join_url"]
+            }
+        else:
+            # Create regular calendar event
+            event = calendar_service.create_calendar_event(
+                title=request["subject"],
+                start_time=start_time,
+                end_time=end_time,
+                location=request.get("location"),
+                description=request.get("description"),
+                attendees=request.get("attendees", [])
+            )
+
+            return {
+                "success": True,
+                "event": event
+            }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create meeting: {str(e)}")
+
+
+@app.post("/api/calendar/schedule-session")
+async def schedule_recording_session(request: dict):
+    """
+    Schedule a VaultScribe recording session with calendar integration
+
+    Request body:
+    {
+        "matter_code": "2024-001",
+        "client_code": "CLIENT-001",
+        "title": "Client Deposition",
+        "start_time": "2024-01-15T10:00:00",
+        "end_time": "2024-01-15T12:00:00",
+        "attendees": ["attorney@lawfirm.com"],
+        "auto_start_recording": true
+    }
+    """
+    try:
+        # Create VaultScribe session
+        session_id = hashlib.sha256(
+            f"{datetime.now().isoformat()}-{secrets.token_hex(8)}".encode()
+        ).hexdigest()[:16]
+
+        session = {
+            "session_id": session_id,
+            "created_at": datetime.now(),
+            "matter_code": request.get("matter_code"),
+            "client_code": request.get("client_code"),
+            "description": request.get("title"),
+            "status": "scheduled",
+            "scheduled_start": request["start_time"],
+            "scheduled_end": request["end_time"],
+            "auto_start": request.get("auto_start_recording", False)
+        }
+
+        sessions[session_id] = session
+
+        # Create calendar meeting
+        calendar_service = get_calendar_service()
+        meeting_data = calendar_service.create_meeting_with_recording_session(
+            session_id=session_id,
+            meeting_config={
+                "title": request.get("title", "VaultScribe Recording"),
+                "start_time": datetime.fromisoformat(request["start_time"]),
+                "end_time": datetime.fromisoformat(request["end_time"]),
+                "matter_code": request.get("matter_code"),
+                "attendees": request.get("attendees", []),
+                "location": f"VaultScribe Session: {session_id}"
+            }
+        )
+
+        # Update session with meeting info
+        session["calendar_event_id"] = meeting_data["calendar_event"]["id"]
+
+        return {
+            "success": True,
+            "session_id": session_id,
+            "meeting": meeting_data,
+            "message": "Recording session scheduled successfully"
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to schedule session: {str(e)}")
+
+
+@app.get("/api/calendar/export-ics/{session_id}")
+def export_calendar_event(session_id: str):
+    """
+    Export calendar event as .ics file
+
+    Returns an iCalendar file for the session
+    """
+    from fastapi.responses import Response
+
+    if session_id not in sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    session = sessions[session_id]
+
+    if "scheduled_start" not in session:
+        raise HTTPException(status_code=400, detail="Session is not scheduled")
+
+    try:
+        calendar_service = get_calendar_service()
+
+        event_data = calendar_service.create_calendar_event(
+            title=f"VaultScribe Recording - {session.get('matter_code', session_id)}",
+            start_time=datetime.fromisoformat(session["scheduled_start"]),
+            end_time=datetime.fromisoformat(session["scheduled_end"]),
+            description=f"Matter: {session.get('matter_code')}\nSession ID: {session_id}",
+            attendees=session.get("attendees", [])
+        )
+
+        ics_content = calendar_service.generate_ics_file(event_data)
+
+        return Response(
+            content=ics_content,
+            media_type="text/calendar",
+            headers={
+                "Content-Disposition": f"attachment; filename=vaultscribe-{session_id}.ics"
+            }
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to export calendar: {str(e)}")
+
+
+@app.post("/api/webhooks/teams")
+async def teams_webhook(request: dict):
+    """
+    Webhook endpoint for Microsoft Teams events
+
+    Handles:
+    - Meeting started/ended events
+    - Bot commands
+    - Recording notifications
+    """
+    try:
+        webhook_handler = get_teams_webhook_handler()
+
+        event_type = request.get("type")
+
+        if event_type == "meeting.started":
+            response = webhook_handler.handle_meeting_started(request.get("data", {}))
+
+            # Auto-start recording if configured
+            if response.get("auto_start"):
+                meeting_id = response["meeting_id"]
+                # Find session by meeting_id (would need to add this mapping)
+                # For now, return the action
+                return {
+                    "acknowledged": True,
+                    "action_taken": "recording_started",
+                    "meeting_id": meeting_id
+                }
+
+        elif event_type == "meeting.ended":
+            response = webhook_handler.handle_meeting_ended(request.get("data", {}))
+
+            return {
+                "acknowledged": True,
+                "action_taken": "recording_stopped_transcription_queued"
+            }
+
+        elif event_type == "bot.command":
+            command = request.get("data", {}).get("command")
+            params = request.get("data", {}).get("params", {})
+
+            response = webhook_handler.handle_bot_command(command, params)
+
+            return {
+                "acknowledged": True,
+                "response": response.get("response"),
+                "action": response.get("action")
+            }
+
+        else:
+            return {
+                "acknowledged": True,
+                "message": "Event type not handled"
+            }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Webhook processing failed: {str(e)}")
+
+
+@app.get("/api/integrations/status")
+def get_integrations_status():
+    """
+    Check status of calendar and Teams integrations
+    """
+    return {
+        "microsoft_teams": {
+            "enabled": bool(os.getenv('MICROSOFT_CLIENT_ID')),
+            "configured": bool(os.getenv('MICROSOFT_TENANT_ID'))
+        },
+        "google_calendar": {
+            "enabled": bool(os.getenv('GOOGLE_CALENDAR_CREDENTIALS')),
+            "configured": bool(os.getenv('GOOGLE_CALENDAR_CREDENTIALS'))
+        },
+        "webhooks": {
+            "teams_webhook": bool(os.getenv('TEAMS_WEBHOOK_SECRET'))
+        }
     }
