@@ -3,3 +3,10 @@ __pycache__/
 node_modules/
 .vscode/
 venv/
+*.pyc
+.DS_Store
+api/uploads/
+*.webm
+*.mp3
+*.wav
+.idea/
