@@ -124,7 +124,7 @@ function displayRecentSessions(sessions) {
   }
 
   container.innerHTML = sessions.map(session => `
-    <div class="session-item" onclick="viewSession('${session.sessionId}')">
+    <div class="session-item" data-session-id="${session.sessionId}">
       <div class="session-header">
         <span class="session-matter">${escapeHtml(session.matterCode || 'Untitled')}</span>
         <span class="session-date">${formatDate(session.createdAt)}</span>
@@ -136,6 +136,14 @@ function displayRecentSessions(sessions) {
       </div>
     </div>
   `).join('');
+
+  // Add click event listeners to session items
+  container.querySelectorAll('.session-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const sessionId = item.dataset.sessionId;
+      viewSession(sessionId);
+    });
+  });
 }
 
 /**
@@ -575,7 +583,7 @@ function displaySessions(sessions) {
   }
 
   container.innerHTML = sessions.map(session => `
-    <div class="session-item" onclick="viewSession('${session.sessionId}')">
+    <div class="session-item" data-session-id="${session.sessionId}">
       <div class="session-header">
         <span class="session-matter">${escapeHtml(session.matterCode || 'Untitled')}</span>
         <span class="session-date">${formatDate(session.createdAt)}</span>
@@ -589,6 +597,14 @@ function displaySessions(sessions) {
       ${session.description ? `<p class="hint">${escapeHtml(session.description)}</p>` : ''}
     </div>
   `).join('');
+
+  // Add click event listeners to session items
+  container.querySelectorAll('.session-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const sessionId = item.dataset.sessionId;
+      viewSession(sessionId);
+    });
+  });
 }
 
 async function viewSession(sessionId) {
