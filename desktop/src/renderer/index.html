@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; media-src 'self' data:">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; media-src 'self' file:">
   <title>VaultScribe - Zero-Knowledge Meeting Intelligence</title>
   <link rel="stylesheet" href="css/main.css">
 </head>
@@ -106,13 +106,15 @@
 
             <div class="form-group">
               <label for="matter-code">Matter Code *</label>
-              <input type="text" id="matter-code" placeholder="e.g., CASE-2024-001" required>
-              <p class="hint">Case number, client ID, or project code</p>
+              <input type="text" id="matter-code" list="matter-code-suggestions" placeholder="e.g., CASE-2024-001" required>
+              <datalist id="matter-code-suggestions"></datalist>
+              <p class="hint">Case number, client ID, or project code (start typing to see previous codes)</p>
             </div>
 
             <div class="form-group">
               <label for="client-code">Client Code</label>
-              <input type="text" id="client-code" placeholder="Optional">
+              <input type="text" id="client-code" list="client-code-suggestions" placeholder="Optional">
+              <datalist id="client-code-suggestions"></datalist>
             </div>
 
             <div class="form-group">

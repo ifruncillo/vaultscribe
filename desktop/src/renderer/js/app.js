@@ -69,6 +69,8 @@ function switchScreen(screenName) {
       loadDashboardData();
     } else if (screenName === 'library') {
       loadLibrarySessions();
+    } else if (screenName === 'record') {
+      loadAutocompleteSuggestions();
     }
   }
 }
@@ -165,6 +167,9 @@ function initializeRecording() {
     document.getElementById('audio-source-group').style.display =
       e.target.checked ? 'block' : 'none';
   });
+
+  // Load autocomplete suggestions
+  loadAutocompleteSuggestions();
 }
 
 async function loadAudioSources() {
@@ -184,6 +189,43 @@ async function loadAudioSources() {
   } catch (error) {
     console.error('Error loading audio sources:', error);
     showError('Failed to load audio sources. Make sure screen recording permission is granted.');
+  }
+}
+
+async function loadAutocompleteSuggestions() {
+  try {
+    // Get all previous sessions
+    const sessions = await window.electronAPI.getSessions();
+
+    // Extract unique matter codes and client codes
+    const matterCodes = new Set();
+    const clientCodes = new Set();
+
+    sessions.forEach(session => {
+      if (session.matterCode) {
+        matterCodes.add(session.matterCode);
+      }
+      if (session.clientCode) {
+        clientCodes.add(session.clientCode);
+      }
+    });
+
+    // Populate matter code datalist
+    const matterDatalist = document.getElementById('matter-code-suggestions');
+    matterDatalist.innerHTML = Array.from(matterCodes)
+      .sort()
+      .map(code => `<option value="${escapeHtml(code)}">`)
+      .join('');
+
+    // Populate client code datalist
+    const clientDatalist = document.getElementById('client-code-suggestions');
+    clientDatalist.innerHTML = Array.from(clientCodes)
+      .sort()
+      .map(code => `<option value="${escapeHtml(code)}">`)
+      .join('');
+
+  } catch (error) {
+    console.error('Error loading autocomplete suggestions:', error);
   }
 }
 

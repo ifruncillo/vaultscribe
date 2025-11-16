@@ -282,12 +282,12 @@ ipcMain.handle('get-audio-url', async (event, audioPath) => {
       throw new Error('Audio file not found: ' + audioPath);
     }
 
-    // Read file and convert to base64 data URL
-    const audioBuffer = fs.readFileSync(audioPath);
-    const base64Audio = audioBuffer.toString('base64');
-    const dataUrl = `data:audio/webm;base64,${base64Audio}`;
+    // Convert absolute path to file:// URL
+    // Use forward slashes for file URLs
+    const normalizedPath = audioPath.replace(/\\/g, '/');
+    const fileUrl = `file:///${normalizedPath}`;
 
-    return dataUrl;
+    return fileUrl;
   } catch (error) {
     console.error('Error loading audio file:', error);
     throw error;
