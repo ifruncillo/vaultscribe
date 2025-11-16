@@ -75,6 +75,16 @@ This is the Electron desktop application for VaultScribe - Phase 1: Core Recordi
 npm start
 ```
 
+**Windows Users:** If `npm start` exits immediately without launching the app, use:
+```powershell
+.\node_modules\.bin\electron.cmd .
+```
+or
+```powershell
+npx electron .
+```
+See [Troubleshooting](#npm-start-exits-immediately-on-windows-no-output) for details.
+
 Or with development tools:
 
 ```bash
@@ -289,6 +299,21 @@ Future versions will support:
 - Make sure Node.js 18+ is installed: `node --version`
 - Delete `node_modules` and reinstall: `rm -rf node_modules && npm install`
 - Check for errors in the console
+
+### `npm start` exits immediately on Windows (no output)
+**Known Issue:** On Windows, `npm start` may exit silently without launching the app. This is a PATH resolution issue where Windows finds `electron.js` instead of the Electron executable.
+
+**Workaround:** Use the full path to the Electron binary:
+```powershell
+.\node_modules\.bin\electron.cmd .
+```
+
+Or use npx:
+```powershell
+npx electron .
+```
+
+**Root Cause:** Windows PATH resolution finds the `electron.js` source file before the Electron CLI executable, causing the command to fail silently.
 
 ### Can't find recordings
 - Check the `recordings/` folder in the app directory
