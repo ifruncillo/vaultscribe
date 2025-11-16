@@ -661,3 +661,17 @@ body {
 .error-message.hidden {
   display: none;
 }
+
+.warning-message {
+  padding: var(--spacing-md);
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #F59E0B;
+  border-radius: 6px;
+  margin-top: var(--spacing-md);
+  font-size: 0.875rem;
+}
+
+.warning-message.hidden {
+  display: none;
+}

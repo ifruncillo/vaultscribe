@@ -690,12 +690,17 @@ async function viewSession(sessionId) {
     document.getElementById('playback-duration').textContent = formatDuration(session.duration);
     document.getElementById('playback-status').textContent = session.status;
 
-    // Hide error message
+    // Hide error and warning messages
     document.getElementById('playback-error').classList.add('hidden');
+    document.getElementById('playback-warning').classList.add('hidden');
 
     // Load audio file
     const audioPlayer = document.getElementById('audio-player');
-    audioPlayer.src = '';  // Clear previous source
+
+    // Pause and remove current source to avoid errors
+    audioPlayer.pause();
+    audioPlayer.removeAttribute('src');
+    audioPlayer.load();
 
     if (!session.audioPath) {
       showPlaybackError('No audio file available for this session');
@@ -707,20 +712,35 @@ async function viewSession(sessionId) {
       const audioUrl = await window.electronAPI.getAudioUrl(session.audioPath);
       console.log('Loading audio from:', audioUrl);
 
-      // Add event listeners for debugging
-      audioPlayer.addEventListener('loadedmetadata', () => {
-        console.log('Audio metadata loaded. Duration:', audioPlayer.duration, 'seconds');
-      });
+      // Remove old event listeners and add new ones
+      // Clone the audio element to remove all listeners
+      const newAudioPlayer = audioPlayer.cloneNode(true);
+      audioPlayer.parentNode.replaceChild(newAudioPlayer, audioPlayer);
 
-      audioPlayer.addEventListener('error', (e) => {
-        console.error('Audio player error:', e);
-        console.error('Error code:', audioPlayer.error?.code);
-        console.error('Error message:', audioPlayer.error?.message);
-        showPlaybackError('Failed to load audio: ' + (audioPlayer.error?.message || 'Unknown error'));
-      });
+      // Add event listener for metadata
+      newAudioPlayer.addEventListener('loadedmetadata', function() {
+        console.log('Audio metadata loaded. Duration:', newAudioPlayer.duration, 'seconds');
 
-      audioPlayer.src = audioUrl;
-      audioPlayer.load();
+        // Handle WebM files with no duration metadata
+        if (!isFinite(newAudioPlayer.duration) || newAudioPlayer.duration === 0) {
+          console.warn('Audio file has no duration metadata (common with WebM). Playback will still work.');
+          // Show warning to user
+          document.getElementById('playback-warning').classList.remove('hidden');
+        }
+      }, { once: true });
+
+      newAudioPlayer.addEventListener('error', function(e) {
+        // Ignore errors from clearing the src
+        if (newAudioPlayer.error && newAudioPlayer.error.code !== 4) {
+          console.error('Audio player error:', e);
+          console.error('Error code:', newAudioPlayer.error?.code);
+          console.error('Error message:', newAudioPlayer.error?.message);
+          showPlaybackError('Failed to load audio: ' + (newAudioPlayer.error?.message || 'Unknown error'));
+        }
+      }, { once: true });
+
+      newAudioPlayer.src = audioUrl;
+      newAudioPlayer.load();
     } catch (error) {
       console.error('Error loading audio:', error);
       showPlaybackError('Failed to load audio file: ' + error.message);
@@ -745,7 +765,8 @@ function closePlaybackModal() {
   // Stop and clear audio
   const audioPlayer = document.getElementById('audio-player');
   audioPlayer.pause();
-  audioPlayer.src = '';
+  audioPlayer.removeAttribute('src');
+  audioPlayer.load();
 }
 
 /**

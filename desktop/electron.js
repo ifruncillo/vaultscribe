@@ -35,8 +35,10 @@ function createWindow() {
     mainWindow.show();
   });
 
-  // Open DevTools to help debug
-  mainWindow.webContents.openDevTools();
+  // Open DevTools only in development mode
+  if (process.env.NODE_ENV === 'development') {
+    mainWindow.webContents.openDevTools();
+  }
 
   // Log renderer errors
   mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
