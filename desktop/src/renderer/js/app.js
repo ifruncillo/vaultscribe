@@ -177,37 +177,48 @@ async function loadAudioSources() {
     const sources = await window.electronAPI.getAudioSources();
     const select = document.getElementById('audio-source');
 
-    // Separate screens and windows for better organization
+    // Separate sources by type
+    const browsers = sources.filter(s => s.isBrowser);
     const screens = sources.filter(s => s.isScreen);
-    const windows = sources.filter(s => !s.isScreen);
+    const apps = sources.filter(s => !s.isScreen && !s.isBrowser);
 
     let optionsHTML = '';
 
-    // Add screens first
-    if (screens.length > 0) {
-      optionsHTML += '<optgroup label="🖥️ Screens (captures all audio from screen)">';
-      optionsHTML += screens.map(source => `
-        <option value="${source.id}">${escapeHtml(source.name)}</option>
+    // Add browsers first (most common use case)
+    if (browsers.length > 0) {
+      optionsHTML += '<optgroup label="🌐 Web Browsers (recommended for Zoom/Teams/Meet)">';
+      optionsHTML += browsers.map(source => `
+        <option value="${source.id}">${escapeHtml(source.displayName)}</option>
       `).join('');
       optionsHTML += '</optgroup>';
     }
 
-    // Add windows
-    if (windows.length > 0) {
-      optionsHTML += '<optgroup label="🪟 Applications & Browser Tabs">';
-      optionsHTML += windows.map(source => `
-        <option value="${source.id}">${escapeHtml(source.name)}</option>
+    // Add application windows
+    if (apps.length > 0) {
+      optionsHTML += '<optgroup label="🪟 Applications">';
+      optionsHTML += apps.map(source => `
+        <option value="${source.id}">${escapeHtml(source.displayName)}</option>
+      `).join('');
+      optionsHTML += '</optgroup>';
+    }
+
+    // Add screens last
+    if (screens.length > 0) {
+      optionsHTML += '<optgroup label="🖥️ Screens">';
+      optionsHTML += screens.map(source => `
+        <option value="${source.id}">${escapeHtml(source.displayName)}</option>
       `).join('');
       optionsHTML += '</optgroup>';
     }
 
     select.innerHTML = optionsHTML;
 
-    // Select first window if available (more likely what user wants), otherwise first screen
-    if (windows.length > 0) {
-      // Find the first window option
-      const firstWindowIndex = screens.length > 0 ? screens.length : 0;
-      select.selectedIndex = firstWindowIndex;
+    // Select first browser if available (most common), otherwise first app, otherwise first screen
+    if (browsers.length > 0) {
+      select.selectedIndex = 0;
+    } else if (apps.length > 0) {
+      const firstAppIndex = 0;
+      select.selectedIndex = firstAppIndex;
     } else if (screens.length > 0) {
       select.selectedIndex = 0;
     }

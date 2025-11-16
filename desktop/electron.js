@@ -94,10 +94,18 @@ ipcMain.handle('get-audio-sources', async () => {
       // Determine source type
       const isScreen = source.id.startsWith('screen:');
 
-      // Format name to be more descriptive
+      // Detect browser windows for better labeling
+      const browserNames = ['Chrome', 'Firefox', 'Edge', 'Safari', 'Brave', 'Opera'];
+      const isBrowser = browserNames.some(browser => source.name.includes(browser));
+
       let displayName = source.name;
-      if (isScreen) {
-        displayName = `📺 ${source.name}`;
+
+      if (isBrowser) {
+        // Extract browser name
+        const browserName = browserNames.find(b => source.name.includes(b)) || 'Browser';
+        displayName = `🌐 ${browserName} (all tabs with audio)`;
+      } else if (isScreen) {
+        displayName = `📺 ${source.name} (all audio on this screen)`;
       } else {
         displayName = `🪟 ${source.name}`;
       }
@@ -107,6 +115,7 @@ ipcMain.handle('get-audio-sources', async () => {
         name: source.name,
         displayName: displayName,
         isScreen: isScreen,
+        isBrowser: isBrowser,
         thumbnail: source.thumbnail.toDataURL()
       };
     });
