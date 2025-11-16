@@ -282,11 +282,20 @@ ipcMain.handle('get-audio-url', async (event, audioPath) => {
       throw new Error('Audio file not found: ' + audioPath);
     }
 
+    // Check file size
+    const stats = fs.statSync(audioPath);
+    console.log('Audio file size:', stats.size, 'bytes');
+
+    if (stats.size === 0) {
+      throw new Error('Audio file is empty (0 bytes)');
+    }
+
     // Convert absolute path to file:// URL
     // Use forward slashes for file URLs
     const normalizedPath = audioPath.replace(/\\/g, '/');
     const fileUrl = `file:///${normalizedPath}`;
 
+    console.log('Returning audio URL:', fileUrl);
     return fileUrl;
   } catch (error) {
     console.error('Error loading audio file:', error);

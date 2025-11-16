@@ -679,7 +679,22 @@ async function viewSession(sessionId) {
     try {
       // Get audio file URL from main process
       const audioUrl = await window.electronAPI.getAudioUrl(session.audioPath);
+      console.log('Loading audio from:', audioUrl);
+
+      // Add event listeners for debugging
+      audioPlayer.addEventListener('loadedmetadata', () => {
+        console.log('Audio metadata loaded. Duration:', audioPlayer.duration, 'seconds');
+      });
+
+      audioPlayer.addEventListener('error', (e) => {
+        console.error('Audio player error:', e);
+        console.error('Error code:', audioPlayer.error?.code);
+        console.error('Error message:', audioPlayer.error?.message);
+        showPlaybackError('Failed to load audio: ' + (audioPlayer.error?.message || 'Unknown error'));
+      });
+
       audioPlayer.src = audioUrl;
+      audioPlayer.load();
     } catch (error) {
       console.error('Error loading audio:', error);
       showPlaybackError('Failed to load audio file: ' + error.message);
