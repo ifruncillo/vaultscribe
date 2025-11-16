@@ -96,14 +96,23 @@ ipcMain.handle('get-audio-sources', async () => {
 
       // Detect browser windows for better labeling
       const browserNames = ['Chrome', 'Firefox', 'Edge', 'Safari', 'Brave', 'Opera'];
-      const isBrowser = browserNames.some(browser => source.name.includes(browser));
+      const browserName = browserNames.find(b => source.name.includes(b));
+      const isBrowser = !!browserName;
 
       let displayName = source.name;
 
       if (isBrowser) {
-        // Extract browser name
-        const browserName = browserNames.find(b => source.name.includes(b)) || 'Browser';
-        displayName = `🌐 ${browserName} (all tabs with audio)`;
+        // Extract the page title (everything before " - Browser Name")
+        // Example: "Zoom Meeting - Google Chrome" -> "Zoom Meeting"
+        const browserSuffix = ` - ${source.name.split(' - ').pop()}`;
+        const pageTitle = source.name.replace(browserSuffix, '').trim();
+
+        // Show the page title to help identify the window, plus clarification
+        if (pageTitle) {
+          displayName = `🌐 ${browserName}: ${pageTitle} (all tabs)`;
+        } else {
+          displayName = `🌐 ${browserName} (all tabs with audio)`;
+        }
       } else if (isScreen) {
         displayName = `📺 ${source.name} (all audio on this screen)`;
       } else {
