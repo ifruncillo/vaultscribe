@@ -177,12 +177,38 @@ async function loadAudioSources() {
     const sources = await window.electronAPI.getAudioSources();
     const select = document.getElementById('audio-source');
 
-    select.innerHTML = sources.map(source => `
-      <option value="${source.id}">${escapeHtml(source.name)}</option>
-    `).join('');
+    // Separate screens and windows for better organization
+    const screens = sources.filter(s => s.isScreen);
+    const windows = sources.filter(s => !s.isScreen);
 
-    // Select first option by default
-    if (sources.length > 0) {
+    let optionsHTML = '';
+
+    // Add screens first
+    if (screens.length > 0) {
+      optionsHTML += '<optgroup label="🖥️ Screens (captures all audio from screen)">';
+      optionsHTML += screens.map(source => `
+        <option value="${source.id}">${escapeHtml(source.name)}</option>
+      `).join('');
+      optionsHTML += '</optgroup>';
+    }
+
+    // Add windows
+    if (windows.length > 0) {
+      optionsHTML += '<optgroup label="🪟 Applications & Browser Tabs">';
+      optionsHTML += windows.map(source => `
+        <option value="${source.id}">${escapeHtml(source.name)}</option>
+      `).join('');
+      optionsHTML += '</optgroup>';
+    }
+
+    select.innerHTML = optionsHTML;
+
+    // Select first window if available (more likely what user wants), otherwise first screen
+    if (windows.length > 0) {
+      // Find the first window option
+      const firstWindowIndex = screens.length > 0 ? screens.length : 0;
+      select.selectedIndex = firstWindowIndex;
+    } else if (screens.length > 0) {
       select.selectedIndex = 0;
     }
 

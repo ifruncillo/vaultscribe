@@ -88,11 +88,26 @@ ipcMain.handle('get-audio-sources', async () => {
       fetchWindowIcons: true
     });
 
-    return sources.map(source => ({
-      id: source.id,
-      name: source.name,
-      thumbnail: source.thumbnail.toDataURL()
-    }));
+    return sources.map(source => {
+      // Determine source type
+      const isScreen = source.id.startsWith('screen:');
+
+      // Format name to be more descriptive
+      let displayName = source.name;
+      if (isScreen) {
+        displayName = `📺 ${source.name}`;
+      } else {
+        displayName = `🪟 ${source.name}`;
+      }
+
+      return {
+        id: source.id,
+        name: source.name,
+        displayName: displayName,
+        isScreen: isScreen,
+        thumbnail: source.thumbnail.toDataURL()
+      };
+    });
   } catch (error) {
     console.error('Error getting audio sources:', error);
     throw error;
