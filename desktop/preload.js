@@ -28,6 +28,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   encryptFile: (filePath) => ipcRenderer.invoke('encrypt-file', filePath),
   decryptFile: (encryptedPath) => ipcRenderer.invoke('decrypt-file', encryptedPath),
 
+  // Playback
+  getAudioUrl: (audioPath) => ipcRenderer.invoke('get-audio-url', audioPath),
+
   // Event listeners
   onRecordingUpdate: (callback) => {
     ipcRenderer.on('recording-update', (event, data) => callback(data));

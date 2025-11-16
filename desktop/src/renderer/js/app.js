@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeRecording();
   initializeLibrary();
   initializeSettings();
+  initializePlayback();
 
   // Load initial data
   loadDashboardData();
@@ -610,10 +611,74 @@ function displaySessions(sessions) {
 async function viewSession(sessionId) {
   try {
     const session = await window.electronAPI.getSession(sessionId);
-    alert(`Session: ${session.matterCode}\n\nStatus: ${session.status}\nDuration: ${formatDuration(session.duration)}\nFile size: ${formatFileSize(session.fileSize)}\nEncrypted: ${session.encrypted ? 'Yes' : 'No'}\n\n(Full viewer coming in Phase 2)`);
+
+    // Show modal
+    const modal = document.getElementById('playback-modal');
+    modal.classList.remove('hidden');
+
+    // Populate session info
+    document.getElementById('playback-matter-code').textContent = session.matterCode || 'Untitled';
+    document.getElementById('playback-client-code').textContent = session.clientCode || 'N/A';
+    document.getElementById('playback-duration').textContent = formatDuration(session.duration);
+    document.getElementById('playback-status').textContent = session.status;
+
+    // Hide error message
+    document.getElementById('playback-error').classList.add('hidden');
+
+    // Load audio file
+    const audioPlayer = document.getElementById('audio-player');
+    audioPlayer.src = '';  // Clear previous source
+
+    if (!session.audioPath) {
+      showPlaybackError('No audio file available for this session');
+      return;
+    }
+
+    try {
+      // Get audio file URL from main process
+      const audioUrl = await window.electronAPI.getAudioUrl(session.audioPath);
+      audioPlayer.src = audioUrl;
+    } catch (error) {
+      console.error('Error loading audio:', error);
+      showPlaybackError('Failed to load audio file: ' + error.message);
+    }
+
   } catch (error) {
     console.error('Error viewing session:', error);
+    showError('Failed to load session: ' + error.message);
   }
+}
+
+function showPlaybackError(message) {
+  const errorDiv = document.getElementById('playback-error');
+  errorDiv.textContent = message;
+  errorDiv.classList.remove('hidden');
+}
+
+function closePlaybackModal() {
+  const modal = document.getElementById('playback-modal');
+  modal.classList.add('hidden');
+
+  // Stop and clear audio
+  const audioPlayer = document.getElementById('audio-player');
+  audioPlayer.pause();
+  audioPlayer.src = '';
+}
+
+/**
+ * Playback
+ */
+function initializePlayback() {
+  // Close playback modal buttons
+  document.getElementById('close-playback').addEventListener('click', closePlaybackModal);
+  document.getElementById('close-playback-btn').addEventListener('click', closePlaybackModal);
+
+  // Close modal when clicking outside
+  document.getElementById('playback-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'playback-modal') {
+      closePlaybackModal();
+    }
+  });
 }
 
 /**

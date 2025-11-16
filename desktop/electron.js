@@ -274,6 +274,26 @@ ipcMain.handle('delete-session', async (event, sessionId) => {
   }
 });
 
+// Playback handler
+ipcMain.handle('get-audio-url', async (event, audioPath) => {
+  try {
+    // Check if file exists
+    if (!fs.existsSync(audioPath)) {
+      throw new Error('Audio file not found: ' + audioPath);
+    }
+
+    // Read file and convert to base64 data URL
+    const audioBuffer = fs.readFileSync(audioPath);
+    const base64Audio = audioBuffer.toString('base64');
+    const dataUrl = `data:audio/webm;base64,${base64Audio}`;
+
+    return dataUrl;
+  } catch (error) {
+    console.error('Error loading audio file:', error);
+    throw error;
+  }
+});
+
 // Handle errors
 process.on('uncaughtException', (error) => {
   console.error('Uncaught exception:', error);
