@@ -8,35 +8,88 @@
 }
 
 :root {
-  /* Colors */
-  --primary: #3B82F6;
-  --primary-dark: #1E40AF;
-  --primary-light: #DBEAFE;
-  --success: #10B981;
-  --warning: #F59E0B;
-  --danger: #EF4444;
-  --gray-900: #111827;
-  --gray-700: #374151;
-  --gray-500: #6B7280;
-  --gray-300: #D1D5DB;
-  --gray-100: #F3F4F6;
-  --gray-50: #F9FAFB;
+  /* Regulated Modern Color System */
+
+  /* Primary Brand Colors (Customizable per client) */
+  --primary-navy: #1E3A5F;
+  --primary-slate: #4A5F7F;
+  --primary-teal: #2D7A7A;
+
+  /* Neutral Scale (Never customized - VaultScribe DNA) */
+  --neutral-50: #F8F9FA;
+  --neutral-100: #E9ECEF;
+  --neutral-200: #DEE2E6;
+  --neutral-300: #CED4DA;
+  --neutral-400: #ADB5BD;
+  --neutral-600: #6C757D;
+  --neutral-700: #495057;
+  --neutral-800: #343A40;
+  --neutral-900: #1A1D20;
+
+  /* Semantic Colors (Never customized - consistent across all clients) */
+  --semantic-success: #2E7D32;
+  --semantic-warning: #F57C00;
+  --semantic-error: #C62828;
+  --semantic-info: #1976D2;
+
+  /* Convenience aliases for backward compatibility */
+  --primary: var(--primary-navy);
+  --primary-dark: var(--primary-slate);
+  --success: var(--semantic-success);
+  --warning: var(--semantic-warning);
+  --danger: var(--semantic-error);
+  --gray-900: var(--neutral-900);
+  --gray-700: var(--neutral-700);
+  --gray-500: var(--neutral-600);
+  --gray-300: var(--neutral-300);
+  --gray-100: var(--neutral-100);
+  --gray-50: var(--neutral-50);
   --white: #FFFFFF;
 
-  /* Spacing */
-  --spacing-xs: 0.25rem;
-  --spacing-sm: 0.5rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 1.5rem;
-  --spacing-xl: 2rem;
+  /* Spacing Scale */
+  --spacing-xs: 0.25rem;  /* 4px */
+  --spacing-sm: 0.5rem;   /* 8px */
+  --spacing-md: 1rem;     /* 16px */
+  --spacing-lg: 1.5rem;   /* 24px */
+  --spacing-xl: 2rem;     /* 32px */
+  --spacing-2xl: 3rem;    /* 48px */
 
-  /* Typography */
+  /* Typography Families */
   --font-system: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'SF Mono', 'Consolas', 'Monaco', monospace;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  /* Typography Scale (Regulated Modern) */
+  --text-page-title: 28px;
+  --text-page-title-line: 36px;
+  --text-page-title-weight: 600;
+
+  --text-section-header: 20px;
+  --text-section-header-line: 28px;
+  --text-section-header-weight: 600;
+
+  --text-body: 14px;
+  --text-body-line: 20px;
+  --text-body-weight: 400;
+
+  --text-body-large: 16px;
+  --text-body-large-line: 28px;
+
+  --text-label: 12px;
+  --text-label-line: 16px;
+  --text-label-weight: 500;
+
+  --text-mono: 13px;
+  --text-mono-line: 18px;
+
+  /* Regulated Modern Shadows (subtle, barely-there) */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+
+  /* Border Radius */
+  --radius-button: 6px;
+  --radius-card: 8px;
+  --radius-pill: 12px;
 }
 
 body {
