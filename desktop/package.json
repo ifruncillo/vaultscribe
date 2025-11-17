@@ -2,7 +2,7 @@
   "name": "vaultscribe-desktop",
   "version": "1.0.0",
   "description": "Zero-knowledge meeting intelligence for everyone",
-  "main": "electron.js",
+  "main": "main.js",
   "scripts": {
     "start": "electron .",
     "dev": "NODE_ENV=development electron .",
@@ -38,7 +38,7 @@
       "output": "dist"
     },
     "files": [
-      "electron.js",
+      "main.js",
       "preload.js",
       "src/**/*",
       "resources/**/*"
