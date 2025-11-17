@@ -182,6 +182,20 @@ body {
   margin-bottom: var(--spacing-lg);
 }
 
+/* Fix button contrast in primary card */
+.card-primary .btn-primary {
+  background: var(--white);
+  color: var(--primary-dark);
+  font-weight: 700;
+}
+
+.card-primary .btn-primary:hover:not(:disabled) {
+  background: var(--gray-100);
+  color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
