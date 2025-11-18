@@ -766,29 +766,74 @@ async function viewSession(sessionId) {
   try {
     const session = await window.electronAPI.getSession(sessionId);
 
-    // Get transcript if available
+    // Show modal
+    const modal = document.getElementById('session-viewer-modal');
+    modal.classList.remove('hidden');
+
+    // Populate session details
+    document.getElementById('viewer-session-title').textContent = `Session: ${session.matterCode}`;
+    document.getElementById('viewer-matter-code').textContent = session.matterCode || 'N/A';
+    document.getElementById('viewer-client-code').textContent = session.clientCode || 'N/A';
+    document.getElementById('viewer-duration').textContent = formatDuration(session.duration);
+    document.getElementById('viewer-file-size').textContent = formatFileSize(session.fileSize);
+    document.getElementById('viewer-encrypted').textContent = session.encrypted ? '🔒 Yes' : '🔓 No';
+    document.getElementById('viewer-created').textContent = formatDate(session.createdAt);
+
+    // Load audio player
+    const audioPlayer = document.getElementById('session-audio-player');
+    if (session.audioPath) {
+      // For now, we'll use file:// protocol directly
+      // In production, you'd want to decrypt and serve through a temporary URL
+      audioPlayer.src = session.audioPath;
+      document.getElementById('audio-player-section').style.display = 'block';
+    } else {
+      document.getElementById('audio-player-section').style.display = 'none';
+    }
+
+    // Load transcript
     let transcriptText = 'No transcript available';
+    const transcribeBtn = document.getElementById('viewer-transcribe-btn');
+
     if (session.transcriptionStatus === 'completed') {
       const transcript = await window.electronAPI.getTranscript(sessionId);
-      if (transcript) {
+      if (transcript && transcript.text) {
         transcriptText = transcript.text;
       }
+      transcribeBtn.style.display = 'none';
     } else if (session.transcriptionStatus === 'processing') {
       transcriptText = 'Transcription in progress...';
+      transcribeBtn.style.display = 'none';
     } else if (session.transcriptionStatus === 'failed') {
       transcriptText = 'Transcription failed: ' + (session.transcriptionError || 'Unknown error');
+      transcribeBtn.style.display = 'inline-block';
+    } else {
+      transcriptText = 'No transcript available. Click the button below to transcribe.';
+      transcribeBtn.style.display = 'inline-block';
     }
 
-    // Show session details (will improve this UI later)
-    alert(`Session: ${session.matterCode}\n\nStatus: ${session.status}\nDuration: ${formatDuration(session.duration)}\nFile size: ${formatFileSize(session.fileSize)}\nEncrypted: ${session.encrypted ? 'Yes' : 'No'}\n\n--- TRANSCRIPT ---\n${transcriptText.substring(0, 500)}${transcriptText.length > 500 ? '...' : ''}`);
+    document.getElementById('viewer-transcript').textContent = transcriptText;
 
-    // Option to transcribe if not already done
-    if (!session.transcriptionStatus || session.transcriptionStatus === 'pending') {
-      const shouldTranscribe = confirm('Would you like to transcribe this recording now?');
-      if (shouldTranscribe && session.audioPath) {
+    // Set up transcribe button click
+    transcribeBtn.onclick = () => {
+      if (session.audioPath) {
+        modal.classList.add('hidden');
         startTranscription(sessionId, session.audioPath);
       }
-    }
+    };
+
+    // Set up close button
+    document.getElementById('close-viewer-btn').onclick = () => {
+      modal.classList.add('hidden');
+      audioPlayer.pause();
+      audioPlayer.src = '';
+    };
+
+    // Close on overlay click
+    document.querySelector('.modal-overlay').onclick = () => {
+      modal.classList.add('hidden');
+      audioPlayer.pause();
+      audioPlayer.src = '';
+    };
 
   } catch (error) {
     console.error('Error viewing session:', error);

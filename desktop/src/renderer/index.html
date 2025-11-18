@@ -277,6 +277,62 @@
     </main>
   </div>
 
+  <!-- Session Viewer Modal -->
+  <div class="modal hidden" id="session-viewer-modal">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="viewer-session-title">Session Details</h2>
+        <button class="btn-close" id="close-viewer-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="session-details">
+          <div class="detail-row">
+            <span class="detail-label">Matter Code:</span>
+            <span class="detail-value" id="viewer-matter-code"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Client Code:</span>
+            <span class="detail-value" id="viewer-client-code"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Duration:</span>
+            <span class="detail-value" id="viewer-duration"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">File Size:</span>
+            <span class="detail-value" id="viewer-file-size"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Encrypted:</span>
+            <span class="detail-value" id="viewer-encrypted"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Created:</span>
+            <span class="detail-value" id="viewer-created"></span>
+          </div>
+        </div>
+
+        <div class="audio-player-section" id="audio-player-section">
+          <h3>🎧 Audio Playback</h3>
+          <audio controls id="session-audio-player" class="audio-player">
+            Your browser does not support the audio element.
+          </audio>
+        </div>
+
+        <div class="transcript-section" id="transcript-section">
+          <h3>📝 Transcript</h3>
+          <div class="transcript-content" id="viewer-transcript">
+            No transcript available
+          </div>
+          <button class="btn btn-primary" id="viewer-transcribe-btn" style="display:none;">
+            Transcribe Now
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="js/app.js"></script>
 </body>
