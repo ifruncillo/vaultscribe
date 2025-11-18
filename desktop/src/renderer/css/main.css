@@ -196,6 +196,12 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+/* Fix hint text contrast in primary card */
+.card-primary .hint {
+  color: rgba(255, 255, 255, 0.9);
+  opacity: 1;
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
