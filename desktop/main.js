@@ -37,9 +37,6 @@ function createWindow() {
     mainWindow.show();
   });
 
-  // Open DevTools to help debug
-  mainWindow.webContents.openDevTools();
-
   // Log renderer errors
   mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
     console.log(`[Renderer ${level}]:`, message, `(${sourceId}:${line})`);
@@ -58,7 +55,8 @@ function createWindow() {
 function initializeServices() {
   encryptionService = new EncryptionService();
   sessionManager = new SessionManager();
-  transcriptionService = new TranscriptionService();
+  // Transcription disabled temporarily - requires audio processing library
+  // transcriptionService = new TranscriptionService();
 
   console.log('VaultScribe services initialized');
 }
@@ -277,80 +275,10 @@ ipcMain.handle('delete-session', async (event, sessionId) => {
   }
 });
 
-// Transcription handlers
+// Transcription handlers (temporarily disabled)
 ipcMain.handle('transcribe-audio', async (event, audioPath, sessionId) => {
-  try {
-    console.log('Starting transcription for:', audioPath);
-
-    // Send progress updates to renderer
-    const sendProgress = (progress) => {
-      mainWindow.webContents.send('transcription-progress', {
-        sessionId,
-        ...progress
-      });
-    };
-
-    // Decrypt audio file if encrypted
-    let audioToTranscribe = audioPath;
-    if (audioPath.endsWith('.enc')) {
-      console.log('Decrypting audio file before transcription...');
-      const decrypted = await encryptionService.decryptFile(audioPath);
-      audioToTranscribe = decrypted;
-    }
-
-    // Update session status
-    await sessionManager.updateSession(sessionId, {
-      transcriptionStatus: 'processing'
-    });
-
-    sendProgress({ status: 'processing', progress: 0 });
-
-    // Transcribe
-    const transcript = await transcriptionService.transcribe(audioToTranscribe, {
-      timestamps: true,
-      language: 'en',
-      onProgress: (progress) => {
-        sendProgress(progress);
-      }
-    });
-
-    // Save transcript to file
-    const transcriptsDir = path.join(process.cwd(), 'transcripts');
-    if (!fs.existsSync(transcriptsDir)) {
-      fs.mkdirSync(transcriptsDir, { recursive: true });
-    }
-
-    const transcriptPath = path.join(transcriptsDir, `${sessionId}.json`);
-    fs.writeFileSync(transcriptPath, JSON.stringify(transcript, null, 2));
-
-    // Update session with transcript info
-    await sessionManager.updateSession(sessionId, {
-      transcriptPath,
-      transcriptionStatus: 'completed',
-      transcript: transcript.text
-    });
-
-    console.log('Transcription complete:', transcriptPath);
-
-    sendProgress({ status: 'completed', progress: 100 });
-
-    return {
-      success: true,
-      transcriptPath,
-      transcript
-    };
-
-  } catch (error) {
-    console.error('Error transcribing audio:', error);
-
-    // Update session with error
-    await sessionManager.updateSession(sessionId, {
-      transcriptionStatus: 'failed',
-      transcriptionError: error.message
-    });
-
-    throw error;
-  }
+  // Transcription temporarily disabled - needs proper audio processing library
+  throw new Error('Transcription feature is currently being upgraded. Coming soon!');
 });
 
 ipcMain.handle('get-transcript', async (event, sessionId) => {
