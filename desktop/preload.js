@@ -28,6 +28,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   encryptFile: (filePath) => ipcRenderer.invoke('encrypt-file', filePath),
   decryptFile: (encryptedPath) => ipcRenderer.invoke('decrypt-file', encryptedPath),
 
+  // Transcription
+  transcribeAudio: (audioPath, sessionId) => ipcRenderer.invoke('transcribe-audio', audioPath, sessionId),
+  getTranscript: (sessionId) => ipcRenderer.invoke('get-transcript', sessionId),
+
   // Event listeners
   onRecordingUpdate: (callback) => {
     ipcRenderer.on('recording-update', (event, data) => callback(data));
@@ -35,6 +39,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   removeRecordingUpdateListener: () => {
     ipcRenderer.removeAllListeners('recording-update');
+  },
+
+  onTranscriptionProgress: (callback) => {
+    ipcRenderer.on('transcription-progress', (event, data) => callback(data));
+  },
+
+  removeTranscriptionProgressListener: () => {
+    ipcRenderer.removeAllListeners('transcription-progress');
   }
 });
 

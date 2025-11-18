@@ -418,8 +418,13 @@ async function stopRecording() {
     document.getElementById('client-code').value = '';
     document.getElementById('description').value = '';
 
-    // Show success message
-    showSuccess(`Recording saved successfully!\n\nDuration: ${formatDuration(duration)}\nFile size: ${formatFileSize(result.fileSize)}\nEncrypted: ${result.encrypted ? 'Yes' : 'No'}`);
+    // Show success message with transcription option
+    const shouldTranscribe = confirm(`Recording saved successfully!\n\nDuration: ${formatDuration(duration)}\nFile size: ${formatFileSize(result.fileSize)}\nEncrypted: ${result.encrypted ? 'Yes' : 'No'}\n\nWould you like to transcribe this recording now?\n(This uses local AI - no data leaves your computer)`);
+
+    if (shouldTranscribe) {
+      // Start transcription
+      startTranscription(currentSession.sessionId, result.audioPath);
+    }
 
     // Refresh dashboard
     loadDashboardData();
@@ -591,15 +596,6 @@ function displaySessions(sessions) {
   `).join('');
 }
 
-async function viewSession(sessionId) {
-  try {
-    const session = await window.electronAPI.getSession(sessionId);
-    alert(`Session: ${session.matterCode}\n\nStatus: ${session.status}\nDuration: ${formatDuration(session.duration)}\nFile size: ${formatFileSize(session.fileSize)}\nEncrypted: ${session.encrypted ? 'Yes' : 'No'}\n\n(Full viewer coming in Phase 2)`);
-  } catch (error) {
-    console.error('Error viewing session:', error);
-  }
-}
-
 /**
  * Settings
  */
@@ -705,6 +701,73 @@ function showError(message) {
 
 function showSuccess(message) {
   alert(message);
+}
+
+/**
+ * Transcription
+ */
+async function startTranscription(sessionId, audioPath) {
+  try {
+    console.log('Starting transcription for session:', sessionId);
+
+    // Show loading message
+    showSuccess('Transcription started!\n\nThis will take a few minutes. The first time you transcribe, the AI model will be downloaded (~140MB).\n\nYou can continue using the app while transcription runs in the background.');
+
+    // Listen for progress updates
+    window.electronAPI.onTranscriptionProgress((progress) => {
+      console.log('Transcription progress:', progress);
+
+      if (progress.sessionId === sessionId) {
+        if (progress.status === 'completed') {
+          showSuccess('Transcription complete! View it in the session details.');
+          loadDashboardData();
+        } else if (progress.status === 'failed') {
+          showError('Transcription failed: ' + progress.error);
+        }
+      }
+    });
+
+    // Start transcription
+    await window.electronAPI.transcribeAudio(audioPath, sessionId);
+
+  } catch (error) {
+    console.error('Error starting transcription:', error);
+    showError('Failed to start transcription: ' + error.message);
+  }
+}
+
+async function viewSession(sessionId) {
+  try {
+    const session = await window.electronAPI.getSession(sessionId);
+
+    // Get transcript if available
+    let transcriptText = 'No transcript available';
+    if (session.transcriptionStatus === 'completed') {
+      const transcript = await window.electronAPI.getTranscript(sessionId);
+      if (transcript) {
+        transcriptText = transcript.text;
+      }
+    } else if (session.transcriptionStatus === 'processing') {
+      transcriptText = 'Transcription in progress...';
+    } else if (session.transcriptionStatus === 'failed') {
+      transcriptText = 'Transcription failed: ' + (session.transcriptionError || 'Unknown error');
+    }
+
+    // Show session details (will improve this UI later)
+    alert(`Session: ${session.matterCode}\n\nStatus: ${session.status}\nDuration: ${formatDuration(session.duration)}\nFile size: ${formatFileSize(session.fileSize)}\nEncrypted: ${session.encrypted ? 'Yes' : 'No'}\n\n--- TRANSCRIPT ---\n${transcriptText.substring(0, 500)}${transcriptText.length > 500 ? '...' : ''}`);
+
+    // Option to transcribe if not already done
+    if (!session.transcriptionStatus || session.transcriptionStatus === 'pending') {
+      const shouldTranscribe = confirm('Would you like to transcribe this recording now?');
+      if (shouldTranscribe && session.audioPath) {
+        startTranscription(sessionId, session.audioPath);
+      }
+    }
+
+  } catch (error) {
+    console.error('Error viewing session:', error);
+    showError('Failed to load session: ' + error.message);
+  }
 }
 
 console.log('VaultScribe app.js loaded');
