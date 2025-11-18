@@ -1,4 +1,3 @@
-const { pipeline } = require('@xenova/transformers');
 const fs = require('fs');
 const path = require('path');
 
@@ -14,6 +13,7 @@ class TranscriptionService {
     this.transcriber = null;
     this.isInitialized = false;
     this.currentTask = null;
+    this.transformers = null;
   }
 
   /**
@@ -30,9 +30,12 @@ class TranscriptionService {
     console.log('Note: First run will download model (~140MB). This is stored locally.');
 
     try {
+      // Dynamic import for ES Module
+      this.transformers = await import('@xenova/transformers');
+
       // Use Whisper base model (good balance of speed/accuracy)
       // Options: tiny (~75MB, fast), base (~140MB), small (~460MB), medium (~1.5GB)
-      this.transcriber = await pipeline(
+      this.transcriber = await this.transformers.pipeline(
         'automatic-speech-recognition',
         'Xenova/whisper-base',
         {
