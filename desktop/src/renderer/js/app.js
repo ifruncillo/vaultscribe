@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Load initial data
   loadDashboardData();
   loadAudioSources();
+  loadRecentCodes();
 });
 
 /**
@@ -175,6 +176,31 @@ async function loadAudioSources() {
   } catch (error) {
     console.error('Error loading audio sources:', error);
     showError('Failed to load audio sources. Make sure screen recording permission is granted.');
+  }
+}
+
+async function loadRecentCodes() {
+  try {
+    const sessions = await window.electronAPI.getSessions();
+
+    // Extract unique matter codes and client codes
+    const matterCodes = [...new Set(sessions.map(s => s.matterCode).filter(Boolean))];
+    const clientCodes = [...new Set(sessions.map(s => s.clientCode).filter(Boolean))];
+
+    // Populate matter code datalist
+    const matterDatalist = document.getElementById('matter-code-list');
+    matterDatalist.innerHTML = matterCodes.map(code => `
+      <option value="${escapeHtml(code)}">
+    `).join('');
+
+    // Populate client code datalist
+    const clientDatalist = document.getElementById('client-code-list');
+    clientDatalist.innerHTML = clientCodes.map(code => `
+      <option value="${escapeHtml(code)}">
+    `).join('');
+
+  } catch (error) {
+    console.error('Error loading recent codes:', error);
   }
 }
 

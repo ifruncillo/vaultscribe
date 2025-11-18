@@ -106,13 +106,15 @@
 
             <div class="form-group">
               <label for="matter-code">Matter Code *</label>
-              <input type="text" id="matter-code" placeholder="e.g., CASE-2024-001" required>
+              <input type="text" id="matter-code" list="matter-code-list" placeholder="e.g., CASE-2024-001" required>
+              <datalist id="matter-code-list"></datalist>
               <p class="hint">Case number, client ID, or project code</p>
             </div>
 
             <div class="form-group">
               <label for="client-code">Client Code</label>
-              <input type="text" id="client-code" placeholder="Optional">
+              <input type="text" id="client-code" list="client-code-list" placeholder="Optional">
+              <datalist id="client-code-list"></datalist>
             </div>
 
             <div class="form-group">
