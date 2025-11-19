@@ -31,6 +31,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Transcription
   transcribeAudio: (audioPath, sessionId) => ipcRenderer.invoke('transcribe-audio', audioPath, sessionId),
   getTranscript: (sessionId) => ipcRenderer.invoke('get-transcript', sessionId),
+  saveTranscript: (sessionId, transcript) => ipcRenderer.invoke('save-transcript', sessionId, transcript),
+  updateSessionTranscriptionStatus: (sessionId, status, error) => ipcRenderer.invoke('update-session-transcription-status', sessionId, status, error),
 
   // Event listeners
   onRecordingUpdate: (callback) => {

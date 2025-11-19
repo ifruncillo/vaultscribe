@@ -277,8 +277,63 @@ ipcMain.handle('delete-session', async (event, sessionId) => {
 
 // Transcription handlers (temporarily disabled)
 ipcMain.handle('transcribe-audio', async (event, audioPath, sessionId) => {
-  // Transcription temporarily disabled - needs proper audio processing library
-  throw new Error('Transcription feature is currently being upgraded. Coming soon!');
+  // Transcription now runs in renderer process using @xenova/transformers
+  // This handler is kept for compatibility but does nothing
+  // The actual transcription happens in the renderer with saveTranscript
+  console.log('Transcription requested for session:', sessionId);
+  return { status: 'processing' };
+});
+
+ipcMain.handle('save-transcript', async (event, sessionId, transcript) => {
+  try {
+    const session = await sessionManager.getSession(sessionId);
+
+    if (!session) {
+      throw new Error('Session not found');
+    }
+
+    // Create transcripts directory if it doesn't exist
+    const transcriptsDir = path.join(process.cwd(), 'transcripts');
+    if (!fs.existsSync(transcriptsDir)) {
+      fs.mkdirSync(transcriptsDir, { recursive: true });
+    }
+
+    // Save transcript to file
+    const transcriptPath = path.join(transcriptsDir, `transcript-${sessionId}.json`);
+    fs.writeFileSync(transcriptPath, JSON.stringify(transcript, null, 2));
+
+    // Update session with transcript path
+    await sessionManager.updateSession(sessionId, {
+      transcriptPath,
+      transcriptionStatus: 'completed'
+    });
+
+    console.log('Transcript saved:', transcriptPath);
+    return { success: true, transcriptPath };
+
+  } catch (error) {
+    console.error('Error saving transcript:', error);
+    throw error;
+  }
+});
+
+ipcMain.handle('update-session-transcription-status', async (event, sessionId, status, error) => {
+  try {
+    const updates = { transcriptionStatus: status };
+
+    if (error) {
+      updates.transcriptionError = error;
+    }
+
+    await sessionManager.updateSession(sessionId, updates);
+
+    console.log(`Session ${sessionId} transcription status updated to: ${status}`);
+    return { success: true };
+
+  } catch (err) {
+    console.error('Error updating session transcription status:', err);
+    throw err;
+  }
 });
 
 ipcMain.handle('get-transcript', async (event, sessionId) => {

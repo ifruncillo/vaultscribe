@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeRecording();
   initializeLibrary();
   initializeSettings();
+  initializeModal();
 
   // Load initial data
   loadDashboardData();
@@ -644,6 +645,25 @@ function initializeSettings() {
   document.getElementById('set-passphrase-btn').addEventListener('click', setEncryptionPassphrase);
 }
 
+function initializeModal() {
+  const modal = document.getElementById('session-viewer-modal');
+  const audioPlayer = document.getElementById('session-audio-player');
+
+  // Set up close button
+  document.getElementById('close-viewer-btn').addEventListener('click', () => {
+    modal.classList.add('hidden');
+    audioPlayer.pause();
+    audioPlayer.src = '';
+  });
+
+  // Close on overlay click
+  document.querySelector('.modal-overlay').addEventListener('click', () => {
+    modal.classList.add('hidden');
+    audioPlayer.pause();
+    audioPlayer.src = '';
+  });
+}
+
 async function setEncryptionPassphrase() {
   const passphrase = document.getElementById('encryption-passphrase').value;
   const statusDiv = document.getElementById('passphrase-status');
@@ -746,34 +766,114 @@ function showSuccess(message) {
 /**
  * Transcription
  */
+let transcriber = null;
+
+async function initTranscriber() {
+  if (transcriber) return transcriber;
+
+  try {
+    // Dynamic import of @xenova/transformers (ES Module)
+    const { pipeline } = await import('@xenova/transformers');
+
+    // Show loading indicator
+    console.log('Loading Whisper model... This may take a few minutes on first run.');
+
+    // Create transcription pipeline
+    transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en');
+
+    console.log('Transcriber initialized successfully');
+    return transcriber;
+
+  } catch (error) {
+    console.error('Error initializing transcriber:', error);
+    throw new Error('Failed to initialize transcription model: ' + error.message);
+  }
+}
+
 async function startTranscription(sessionId, audioPath) {
   try {
     console.log('Starting transcription for session:', sessionId);
 
     // Show loading message
-    showSuccess('Transcription started!\n\nThis will take a few minutes. The first time you transcribe, the AI model will be downloaded (~140MB).\n\nYou can continue using the app while transcription runs in the background.');
+    showSuccess('Transcription started!\n\nThis will take a few minutes. The first time you transcribe, the AI model will be downloaded (~75MB for Whisper Tiny).\n\nYou can continue using the app while transcription runs in the background.');
 
-    // Listen for progress updates
-    window.electronAPI.onTranscriptionProgress((progress) => {
-      console.log('Transcription progress:', progress);
+    // Initialize transcriber if not already done
+    const model = await initTranscriber();
 
-      if (progress.sessionId === sessionId) {
-        if (progress.status === 'completed') {
-          showSuccess('Transcription complete! View it in the session details.');
-          loadDashboardData();
-        } else if (progress.status === 'failed') {
-          showError('Transcription failed: ' + progress.error);
-        }
-      }
+    // Load audio file as ArrayBuffer
+    const audioBuffer = await fetch(audioPath).then(r => r.arrayBuffer());
+
+    // Create an audio context to decode the audio
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const decodedAudio = await audioContext.decodeAudioData(audioBuffer);
+
+    // Convert to the format expected by the model (mono, 16kHz)
+    const audioData = await preprocessAudio(decodedAudio);
+
+    // Run transcription
+    console.log('Running transcription...');
+    const result = await model(audioData);
+
+    // Save transcript
+    await window.electronAPI.saveTranscript(sessionId, {
+      text: result.text,
+      chunks: result.chunks || []
     });
 
-    // Start transcription
-    await window.electronAPI.transcribeAudio(audioPath, sessionId);
+    // Update session status
+    await window.electronAPI.updateSessionTranscriptionStatus(sessionId, 'completed');
+
+    showSuccess('Transcription complete! View it in the session details.');
+    loadDashboardData();
 
   } catch (error) {
     console.error('Error starting transcription:', error);
-    showError('Failed to start transcription: ' + error.message);
+
+    // Update session status to failed
+    try {
+      await window.electronAPI.updateSessionTranscriptionStatus(sessionId, 'failed', error.message);
+    } catch (e) {
+      console.error('Error updating session status:', e);
+    }
+
+    showError('Failed to transcribe: ' + error.message);
   }
+}
+
+// Preprocess audio to match Whisper's expected format
+async function preprocessAudio(audioBuffer) {
+  // Whisper expects mono audio at 16kHz
+  const targetSampleRate = 16000;
+
+  // Get the first channel (convert to mono if stereo)
+  let audioData = audioBuffer.getChannelData(0);
+
+  // Resample if needed
+  if (audioBuffer.sampleRate !== targetSampleRate) {
+    audioData = await resampleAudio(audioData, audioBuffer.sampleRate, targetSampleRate);
+  }
+
+  return audioData;
+}
+
+// Simple resampling function
+async function resampleAudio(audioData, fromSampleRate, toSampleRate) {
+  const ratio = fromSampleRate / toSampleRate;
+  const newLength = Math.round(audioData.length / ratio);
+  const result = new Float32Array(newLength);
+
+  for (let i = 0; i < newLength; i++) {
+    const index = i * ratio;
+    const indexInt = Math.floor(index);
+    const indexFrac = index - indexInt;
+
+    const a = audioData[indexInt];
+    const b = audioData[indexInt + 1] !== undefined ? audioData[indexInt + 1] : a;
+
+    result[i] = a + (b - a) * indexFrac;
+  }
+
+  return result;
 }
 
 async function viewSession(sessionId) {
@@ -827,27 +927,17 @@ async function viewSession(sessionId) {
 
     document.getElementById('viewer-transcript').textContent = transcriptText;
 
-    // Set up transcribe button click
-    transcribeBtn.onclick = () => {
+    // Set up transcribe button click - clone to remove old listeners
+    const oldTranscribeBtn = transcribeBtn;
+    const newTranscribeBtn = transcribeBtn.cloneNode(true);
+    oldTranscribeBtn.parentNode.replaceChild(newTranscribeBtn, oldTranscribeBtn);
+
+    newTranscribeBtn.addEventListener('click', () => {
       if (session.audioPath) {
         modal.classList.add('hidden');
         startTranscription(sessionId, session.audioPath);
       }
-    };
-
-    // Set up close button
-    document.getElementById('close-viewer-btn').onclick = () => {
-      modal.classList.add('hidden');
-      audioPlayer.pause();
-      audioPlayer.src = '';
-    };
-
-    // Close on overlay click
-    document.querySelector('.modal-overlay').onclick = () => {
-      modal.classList.add('hidden');
-      audioPlayer.pause();
-      audioPlayer.src = '';
-    };
+    });
 
   } catch (error) {
     console.error('Error viewing session:', error);
